@@ -1,0 +1,1166 @@
+<!DOCTYPE HTML>
+<html lang="en">
+
+
+<head>
+    <meta charset="utf-8">
+    <meta name="keywords" content="flink的CDC技术, Hexo">
+    <meta name="description" content="[toc]
+flink的CDC技术从mysql的binlog谈起
+记录所有的数据变更和写入
+用于主从复制和数据恢复
+必须提交了事务才能记录binlog
+重启，手动刷新和日志文件大于了指定大小的时候，生成新的日志文件
+日志格式
+Stateme">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="renderer" content="webkit|ie-stand|ie-comp">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="referrer" content="no-referrer-when-downgrade">
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+
+
+    <title>flink的CDC技术 | Hexo</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+
+    <link rel="stylesheet" type="text/css" href="/libs/awesome/css/all.min.css">
+    <link rel="stylesheet" type="text/css" href="/libs/materialize/materialize.min.css">
+    <link rel="stylesheet" type="text/css" href="/libs/aos/aos.css">
+    <link rel="stylesheet" type="text/css" href="/libs/animate/animate.min.css">
+    <link rel="stylesheet" type="text/css" href="/libs/lightGallery/css/lightgallery.min.css">
+    <link rel="stylesheet" type="text/css" href="/css/matery.css">
+    <link rel="stylesheet" type="text/css" href="/css/my.css">
+
+    <script src="/libs/jquery/jquery-3.6.0.min.js"></script>
+
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+
+
+
+<body>
+    <header class="navbar-fixed">
+    <nav id="headNav" class="bg-color nav-transparent">
+        <div id="navContainer" class="nav-wrapper container">
+            <div class="brand-logo">
+                <a href="/" class="waves-effect waves-light">
+                    
+                    <img src="/medias/logo.png" class="logo-img" alt="LOGO">
+                    
+                    <span class="logo-span">Hexo</span>
+                </a>
+            </div>
+            
+
+<a href="#" data-target="mobile-nav" class="sidenav-trigger button-collapse"><i class="fas fa-bars"></i></a>
+<ul class="right nav-menu">
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/" class="waves-effect waves-light">
+      
+      <i class="fas fa-home" style="zoom: 0.6;"></i>
+      
+      <span>Index</span>
+    </a>
+    
+  </li>
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/tags" class="waves-effect waves-light">
+      
+      <i class="fas fa-tags" style="zoom: 0.6;"></i>
+      
+      <span>Tags</span>
+    </a>
+    
+  </li>
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/categories" class="waves-effect waves-light">
+      
+      <i class="fas fa-bookmark" style="zoom: 0.6;"></i>
+      
+      <span>Categories</span>
+    </a>
+    
+  </li>
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/archives" class="waves-effect waves-light">
+      
+      <i class="fas fa-archive" style="zoom: 0.6;"></i>
+      
+      <span>Archives</span>
+    </a>
+    
+  </li>
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/about" class="waves-effect waves-light">
+      
+      <i class="fas fa-user-circle" style="zoom: 0.6;"></i>
+      
+      <span>About</span>
+    </a>
+    
+  </li>
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/contact" class="waves-effect waves-light">
+      
+      <i class="fas fa-comments" style="zoom: 0.6;"></i>
+      
+      <span>Contact</span>
+    </a>
+    
+  </li>
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/friends" class="waves-effect waves-light">
+      
+      <i class="fas fa-address-book" style="zoom: 0.6;"></i>
+      
+      <span>Friends</span>
+    </a>
+    
+  </li>
+  
+  <li>
+    <a href="#searchModal" class="modal-trigger waves-effect waves-light">
+      <i id="searchIcon" class="fas fa-search" title="Search" style="zoom: 0.85;"></i>
+    </a>
+  </li>
+</ul>
+
+
+<div id="mobile-nav" class="side-nav sidenav">
+
+    <div class="mobile-head bg-color">
+        
+        <img src="/medias/logo.png" class="logo-img circle responsive-img">
+        
+        <div class="logo-name">Hexo</div>
+        <div class="logo-desc">
+            
+            Never really desperate, only the lost of the soul.
+            
+        </div>
+    </div>
+
+    <ul class="menu-list mobile-menu-list">
+        
+        <li class="m-nav-item">
+	  
+		<a href="/" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-home"></i>
+			
+			Index
+		</a>
+          
+        </li>
+        
+        <li class="m-nav-item">
+	  
+		<a href="/tags" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-tags"></i>
+			
+			Tags
+		</a>
+          
+        </li>
+        
+        <li class="m-nav-item">
+	  
+		<a href="/categories" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-bookmark"></i>
+			
+			Categories
+		</a>
+          
+        </li>
+        
+        <li class="m-nav-item">
+	  
+		<a href="/archives" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-archive"></i>
+			
+			Archives
+		</a>
+          
+        </li>
+        
+        <li class="m-nav-item">
+	  
+		<a href="/about" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-user-circle"></i>
+			
+			About
+		</a>
+          
+        </li>
+        
+        <li class="m-nav-item">
+	  
+		<a href="/contact" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-comments"></i>
+			
+			Contact
+		</a>
+          
+        </li>
+        
+        <li class="m-nav-item">
+	  
+		<a href="/friends" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-address-book"></i>
+			
+			Friends
+		</a>
+          
+        </li>
+        
+        
+        <li><div class="divider"></div></li>
+        <li>
+            <a href="https://github.com/blinkfox/hexo-theme-matery" class="waves-effect waves-light" target="_blank">
+                <i class="fab fa-github-square fa-fw"></i>Fork Me
+            </a>
+        </li>
+        
+    </ul>
+</div>
+
+
+        </div>
+
+        
+            <style>
+    .nav-transparent .github-corner {
+        display: none !important;
+    }
+
+    .github-corner {
+        position: absolute;
+        z-index: 10;
+        top: 0;
+        right: 0;
+        border: 0;
+        transform: scale(1.1);
+    }
+
+    .github-corner svg {
+        color: #0f9d58;
+        fill: #fff;
+        height: 64px;
+        width: 64px;
+    }
+
+    .github-corner:hover .octo-arm {
+        animation: a 0.56s ease-in-out;
+    }
+
+    .github-corner .octo-arm {
+        animation: none;
+    }
+
+    @keyframes a {
+        0%,
+        to {
+            transform: rotate(0);
+        }
+        20%,
+        60% {
+            transform: rotate(-25deg);
+        }
+        40%,
+        80% {
+            transform: rotate(10deg);
+        }
+    }
+</style>
+
+<a href="https://github.com/blinkfox/hexo-theme-matery" class="github-corner tooltipped hide-on-med-and-down" target="_blank"
+   data-tooltip="Fork Me" data-position="left" data-delay="50">
+    <svg viewBox="0 0 250 250" aria-hidden="true">
+        <path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path>
+        <path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2"
+              fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path>
+        <path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z"
+              fill="currentColor" class="octo-body"></path>
+    </svg>
+</a>
+        
+    </nav>
+
+</header>
+
+    
+
+
+
+<div class="bg-cover pd-header post-cover" style="background-image: url('/medias/featureimages/13.jpg')">
+    <div class="container" style="right: 0px;left: 0px;">
+        <div class="row">
+            <div class="col s12 m12 l12">
+                <div class="brand">
+                    <h1 class="description center-align post-title">flink的CDC技术</h1>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+<main class="container content">
+
+    
+    <!-- 文章内容详情 -->
+<div id="artDetail">
+    <div class="card">
+        <div class="card-content article-info">
+            <div class="row tag-cate">
+                <div class="col s7">
+                    
+                    <div class="article-tag">
+                        
+                            <a href="/tags/flink/">
+                                <span class="chip bg-color">flink</span>
+                            </a>
+                        
+                            <a href="/tags/cdc/">
+                                <span class="chip bg-color">cdc</span>
+                            </a>
+                        
+                    </div>
+                    
+                </div>
+                <div class="col s5 right-align">
+                    
+                    <div class="post-cate">
+                        <i class="fas fa-bookmark fa-fw icon-category"></i>
+                        
+                            <a href="/categories/Markdown/" class="post-category">
+                                Markdown
+                            </a>
+                        
+                    </div>
+                    
+                </div>
+            </div>
+
+            <div class="post-info">
+                
+                <div class="post-date info-break-policy">
+                    <i class="far fa-calendar-minus fa-fw"></i>Publish Date:&nbsp;&nbsp;
+                    2020-12-10
+                </div>
+                
+
+                
+
+                
+
+                
+
+                
+            </div>
+        </div>
+        <hr class="clearfix">
+
+        
+
+        
+
+        <div class="card-content article-card-content">
+            <div id="articleContent">
+                <p>[toc]</p>
+<h1 id="flink的CDC技术"><a href="#flink的CDC技术" class="headerlink" title="flink的CDC技术"></a>flink的CDC技术</h1><h2 id="从mysql的binlog谈起"><a href="#从mysql的binlog谈起" class="headerlink" title="从mysql的binlog谈起"></a>从mysql的binlog谈起</h2><ul>
+<li>记录所有的数据变更和写入</li>
+<li>用于主从复制和数据恢复</li>
+<li>必须提交了事务才能记录binlog</li>
+<li>重启，手动刷新和日志文件大于了指定大小的时候，生成新的日志文件</li>
+<li>日志格式<ul>
+<li>Statement：记录执行语句，（在主从复制的时候特定的函数会出现特定的问题）</li>
+<li>Row：记录所有更改前后的内容，（不会出现特定函数的问题，会有大量的日志文件，例如修改操作）</li>
+<li>Mixed：结核上述两种，按照情况选择要使用的格式</li>
+</ul>
+</li>
+</ul>
+<h2 id="优势"><a href="#优势" class="headerlink" title="优势"></a>优势</h2><ul>
+<li><p>能够捕获所有数据的变化，捕获完整的变更记录。在异地容灾，数据备份等场景中得到广泛应用，如果是基于查询的 CDC 有可能导致两次查询的中间一部分数据丢失</p>
+</li>
+<li><p>每次 DML 操作均有记录无需像查询 CDC 这样发起全表扫描进行过滤，拥有更高的效率和性能，具有低延迟，不增加数据库负载的优势</p>
+</li>
+<li><p>无需入侵业务，业务解耦，无需更改业务模型</p>
+</li>
+<li><p>捕获删除事件和捕获旧记录的状态，在查询 CDC 中，周期的查询无法感知中间数据是否删除</p>
+</li>
+</ul>
+<h2 id="kafka"><a href="#kafka" class="headerlink" title="kafka"></a>kafka</h2><ul>
+<li>Debezium构建于kafka上</li>
+<li>source，sink，broker的概念</li>
+</ul>
+<h2 id="Debezium"><a href="#Debezium" class="headerlink" title="Debezium"></a>Debezium</h2><ul>
+<li><p>开源的分布式平台</p>
+</li>
+<li><p>绑定数据库后可以对数据库的数据变更做出及时的相应</p>
+</li>
+<li><p>构建于kafka的部署模式&amp;独立部署的模式</p>
+</li>
+<li><p>固定的json响应格式</p>
+</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&#123; &quot;schema&quot;: &#123;    ...  &#125;, &quot;payload&quot;: &#123;    ... &#125;, &quot;schema&quot;: &#123;    ... &#125;, &quot;payload&quot;: &#123;    ... &#125;, &#125;</span><br></pre></td></tr></table></figure>
+<table>
+<thead>
+<tr>
+<th align="left">Item</th>
+<th align="left">Field name</th>
+<th align="left">Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">1</td>
+<td align="left"><code>schema</code></td>
+<td align="left">The first <code>schema</code> field is part of the event key. It specifies a Kafka Connect schema that describes what is in the event key’s <code>payload</code> portion. In other words, the first <code>schema</code> field describes the structure of the primary key, or the unique key if the table does not have a primary key, for the table that was changed.  It is possible to override the table’s primary key by setting the <a target="_blank" rel="noopener" href="https://debezium.io/documentation/reference/1.3/connectors/mysql.html#mysql-property-message-key-columns"><code>message.key.columns</code> connector configuration property</a>. In this case, the first schema field describes the structure of the key identified by that property.</td>
+</tr>
+<tr>
+<td align="left">2</td>
+<td align="left"><code>payload</code></td>
+<td align="left">The first <code>payload</code> field is part of the event key. It has the structure described by the previous <code>schema</code> field and it contains the key for the row that was changed.</td>
+</tr>
+<tr>
+<td align="left">3</td>
+<td align="left"><code>schema</code></td>
+<td align="left">The second <code>schema</code> field is part of the event value. It specifies the Kafka Connect schema that describes what is in the event value’s <code>payload</code> portion. In other words, the second <code>schema</code> describes the structure of the row that was changed. Typically, this schema contains nested schemas.</td>
+</tr>
+<tr>
+<td align="left">4</td>
+<td align="left"><code>payload</code></td>
+<td align="left">The second <code>payload</code> field is part of the event value. It has the structure described by the previous <code>schema</code> field and it contains the actual data for the row that was changed.</td>
+</tr>
+</tbody></table>
+<h2 id="flink"><a href="#flink" class="headerlink" title="flink"></a>flink</h2><h3 id="debezium嵌入flink"><a href="#debezium嵌入flink" class="headerlink" title="debezium嵌入flink"></a>debezium嵌入flink</h3><ul>
+<li><p>返回格式</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Struct&#123;after=Struct&#123;id=2,name=kate,age=28&#125;,source=Struct&#123;version=1.2.1.Final,connector=mysql,name=mysql_binlog_source,ts_ms=0,snapshot=true,db=company,table=student,server_id=0,file=mysql-bin.000001,pos=4755,row=0&#125;,op=c,ts_ms=1637292711750&#125;</span><br><span class="line"> 1，同时存在 beforeStruct 跟 afterStruct数据的话，就代表是update的数据</span><br><span class="line"> 2,只存在 beforeStruct 就是delete数据</span><br><span class="line"> 3，只存在 afterStruct数据 就是insert数据</span><br></pre></td></tr></table></figure></li>
+<li><p>转化为json，解析</p>
+</li>
+</ul>
+<h1 id="flinkSQL"><a href="#flinkSQL" class="headerlink" title="flinkSQL"></a>flinkSQL</h1><h2 id="语法"><a href="#语法" class="headerlink" title="语法"></a>语法</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> TO_TIMESTAMP(tm_v) <span class="keyword">from</span> tm</span><br><span class="line">#String 转化为时间类型</span><br></pre></td></tr></table></figure>
+
+<h2 id="窗口函数"><a href="#窗口函数" class="headerlink" title="窗口函数"></a>窗口函数</h2><h3 id="滚动窗口"><a href="#滚动窗口" class="headerlink" title="滚动窗口"></a>滚动窗口</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">#窗口<span class="number">10</span>s</span><br><span class="line"><span class="keyword">select</span> userId</span><br><span class="line">, <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">as</span> orderCount</span><br><span class="line">, <span class="built_in">max</span>(money) <span class="keyword">as</span> maxMoney</span><br><span class="line">,<span class="built_in">min</span>(money) <span class="keyword">as</span> minMoney</span><br><span class="line"> ,<span class="built_in">min</span>(createTime) </span><br><span class="line">,tumble_start(createTime, <span class="type">INTERVAL</span> <span class="string">&#x27;10&#x27;</span> <span class="keyword">SECOND</span>) </span><br><span class="line">,tumble_end(createTime, <span class="type">INTERVAL</span> <span class="string">&#x27;10&#x27;</span> <span class="keyword">SECOND</span>) </span><br><span class="line"><span class="keyword">from</span> tb_order</span><br><span class="line"> <span class="keyword">group</span> <span class="keyword">by</span> userId,tumble(createTime, <span class="type">INTERVAL</span> <span class="string">&#x27;10&#x27;</span> <span class="keyword">SECOND</span>) </span><br></pre></td></tr></table></figure>
+
+<h3 id="滑动窗口"><a href="#滑动窗口" class="headerlink" title="滑动窗口"></a>滑动窗口</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">#窗口<span class="number">60</span>s，间隔<span class="number">5</span>s</span><br><span class="line"><span class="keyword">select</span> userId</span><br><span class="line">, <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">as</span> orderCount</span><br><span class="line">, <span class="built_in">max</span>(money) <span class="keyword">as</span> maxMoney</span><br><span class="line">,<span class="built_in">min</span>(money) <span class="keyword">as</span> minMoney</span><br><span class="line"> ,<span class="built_in">min</span>(createTime) </span><br><span class="line">,hop_start(createTime, <span class="type">INTERVAL</span> <span class="string">&#x27;5&#x27;</span> <span class="keyword">SECOND</span>,<span class="type">INTERVAL</span> <span class="string">&#x27;60&#x27;</span> <span class="keyword">SECOND</span>) </span><br><span class="line">,hop_end(createTime, <span class="type">INTERVAL</span> <span class="string">&#x27;5&#x27;</span> <span class="keyword">SECOND</span>,<span class="type">INTERVAL</span> <span class="string">&#x27;60&#x27;</span> <span class="keyword">SECOND</span>) </span><br><span class="line"><span class="keyword">from</span> tb_order</span><br><span class="line"> <span class="keyword">group</span> <span class="keyword">by</span> userId,hop(createTime, <span class="type">INTERVAL</span> <span class="string">&#x27;5&#x27;</span> <span class="keyword">SECOND</span>,<span class="type">INTERVAL</span> <span class="string">&#x27;60&#x27;</span> <span class="keyword">SECOND</span>) </span><br></pre></td></tr></table></figure>
+
+<h3 id="累计窗口"><a href="#累计窗口" class="headerlink" title="累计窗口"></a>累计窗口</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">#每隔<span class="number">10</span>s统计今天的数据</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> print_sink</span><br><span class="line"><span class="keyword">select</span></span><br><span class="line"> date_format(window_start, <span class="string">&#x27;HH:mm:ss&#x27;</span>)</span><br><span class="line"> , date_format(window_end, <span class="string">&#x27;HH:mm:ss&#x27;</span>)</span><br><span class="line"> , <span class="built_in">count</span>(id)</span><br><span class="line"> , <span class="built_in">count</span>(<span class="keyword">distinct</span> id)</span><br><span class="line">  <span class="keyword">FROM</span> <span class="keyword">TABLE</span>(</span><br><span class="line">    CUMULATE(<span class="keyword">TABLE</span> datagen_source, DESCRIPTOR(proc_time), <span class="type">INTERVAL</span> <span class="string">&#x27;10&#x27;</span> <span class="keyword">SECOND</span>, <span class="type">INTERVAL</span> <span class="string">&#x27;1&#x27;</span> <span class="keyword">DAY</span>))</span><br><span class="line">  <span class="keyword">GROUP</span> <span class="keyword">BY</span> window_start, window_end</span><br></pre></td></tr></table></figure>
+
+<h2 id="cube函数"><a href="#cube函数" class="headerlink" title="cube函数"></a>cube函数</h2><h3 id="GROUPING-SETS"><a href="#GROUPING-SETS" class="headerlink" title="GROUPING SETS"></a>GROUPING SETS</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">#<span class="keyword">GROUP</span> SETS 中的表达式可以包含 <span class="number">0</span> 个或多个字段，<span class="number">0</span> 个表示所有行聚合到 <span class="number">1</span> 组。</span><br><span class="line"><span class="keyword">SELECT</span> window_start, window_end, supplier_id, <span class="built_in">SUM</span>(price) <span class="keyword">as</span> price</span><br><span class="line">  <span class="keyword">FROM</span> <span class="keyword">TABLE</span>(</span><br><span class="line">    TUMBLE(<span class="keyword">TABLE</span> Bid, DESCRIPTOR(bidtime), <span class="type">INTERVAL</span> <span class="string">&#x27;10&#x27;</span> MINUTES))</span><br><span class="line">  <span class="keyword">GROUP</span> <span class="keyword">BY</span> window_start, window_end, <span class="keyword">GROUPING</span> SETS ((supplier_id), ());</span><br><span class="line"><span class="comment">-- 在 Window 内，按照 supplier_id 分组，和部分组两个规则</span></span><br><span class="line">  </span><br><span class="line"><span class="operator">+</span><span class="comment">------------------+------------------+-------------+-------+</span></span><br><span class="line"><span class="operator">|</span>     window_start <span class="operator">|</span>       window_end <span class="operator">|</span> supplier_id <span class="operator">|</span> price <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">------------------+------------------+-------------+-------+</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-04</span><span class="number">-15</span> <span class="number">08</span>:<span class="number">00</span> <span class="operator">|</span> <span class="number">2020</span><span class="number">-04</span><span class="number">-15</span> <span class="number">08</span>:<span class="number">10</span> <span class="operator">|</span>      (<span class="keyword">NULL</span>) <span class="operator">|</span> <span class="number">11.00</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-04</span><span class="number">-15</span> <span class="number">08</span>:<span class="number">00</span> <span class="operator">|</span> <span class="number">2020</span><span class="number">-04</span><span class="number">-15</span> <span class="number">08</span>:<span class="number">10</span> <span class="operator">|</span>   supplier2 <span class="operator">|</span>  <span class="number">5.00</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-04</span><span class="number">-15</span> <span class="number">08</span>:<span class="number">00</span> <span class="operator">|</span> <span class="number">2020</span><span class="number">-04</span><span class="number">-15</span> <span class="number">08</span>:<span class="number">10</span> <span class="operator">|</span>   supplier1 <span class="operator">|</span>  <span class="number">6.00</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-04</span><span class="number">-15</span> <span class="number">08</span>:<span class="number">10</span> <span class="operator">|</span> <span class="number">2020</span><span class="number">-04</span><span class="number">-15</span> <span class="number">08</span>:<span class="number">20</span> <span class="operator">|</span>      (<span class="keyword">NULL</span>) <span class="operator">|</span> <span class="number">10.00</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-04</span><span class="number">-15</span> <span class="number">08</span>:<span class="number">10</span> <span class="operator">|</span> <span class="number">2020</span><span class="number">-04</span><span class="number">-15</span> <span class="number">08</span>:<span class="number">20</span> <span class="operator">|</span>   supplier2 <span class="operator">|</span>  <span class="number">9.00</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-04</span><span class="number">-15</span> <span class="number">08</span>:<span class="number">10</span> <span class="operator">|</span> <span class="number">2020</span><span class="number">-04</span><span class="number">-15</span> <span class="number">08</span>:<span class="number">20</span> <span class="operator">|</span>   supplier1 <span class="operator">|</span>  <span class="number">1.00</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">------------------+------------------+-------------+-------+</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="ROLLUP"><a href="#ROLLUP" class="headerlink" title="ROLLUP"></a>ROLLUP</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">#<span class="keyword">ROLLUP</span>(a, b) 等同于 <span class="keyword">GROUPING</span> SETS ((a), (a, b), ())</span><br><span class="line"><span class="keyword">SELECT</span> window_start, window_end, supplier_id, <span class="built_in">SUM</span>(price) <span class="keyword">as</span> price</span><br><span class="line"><span class="keyword">FROM</span> <span class="keyword">TABLE</span>(</span><br><span class="line">    TUMBLE(<span class="keyword">TABLE</span> Bid, DESCRIPTOR(bidtime), <span class="type">INTERVAL</span> <span class="string">&#x27;10&#x27;</span> MINUTES))</span><br><span class="line"><span class="keyword">GROUP</span> <span class="keyword">BY</span> window_start, window_end, <span class="keyword">ROLLUP</span> (supplier_id);</span><br></pre></td></tr></table></figure>
+
+<h3 id="CUBE"><a href="#CUBE" class="headerlink" title="CUBE"></a>CUBE</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">#<span class="keyword">CUBE</span>(a, b) 等同于 <span class="keyword">GROUPING</span> SETS ((a), (b), (a, b), ())</span><br><span class="line"><span class="keyword">SELECT</span> window_start, window_end, item, supplier_id, <span class="built_in">SUM</span>(price) <span class="keyword">as</span> price</span><br><span class="line">  <span class="keyword">FROM</span> <span class="keyword">TABLE</span>(</span><br><span class="line">    TUMBLE(<span class="keyword">TABLE</span> Bid, DESCRIPTOR(bidtime), <span class="type">INTERVAL</span> <span class="string">&#x27;10&#x27;</span> MINUTES))</span><br><span class="line">  <span class="keyword">GROUP</span> <span class="keyword">BY</span> window_start, window_end, <span class="keyword">CUBE</span> (supplier_id, item);</span><br></pre></td></tr></table></figure>
+
+<h2 id="demo"><a href="#demo" class="headerlink" title="demo"></a>demo</h2><p><a target="_blank" rel="noopener" href="https://xie.infoq.cn/article/c664e0a89afb2110db4f18af9">https://xie.infoq.cn/article/c664e0a89afb2110db4f18af9</a></p>
+<h2 id="Window-Top-N"><a href="#Window-Top-N" class="headerlink" title="Window Top-N"></a>Window Top-N</h2><p>只适用流处理模式</p>
+<p>计算每 10 分钟内销售额最高的前 3 名供应商。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span></span><br><span class="line">  <span class="keyword">FROM</span> (</span><br><span class="line">    <span class="keyword">SELECT</span> <span class="operator">*</span>, </span><br><span class="line">        <span class="built_in">ROW_NUMBER</span>() <span class="keyword">OVER</span> (<span class="keyword">PARTITION</span> <span class="keyword">BY</span> window_start, window_end </span><br><span class="line">            <span class="keyword">ORDER</span> <span class="keyword">BY</span> price <span class="keyword">DESC</span>) <span class="keyword">as</span> rownum</span><br><span class="line">    <span class="keyword">FROM</span> (</span><br><span class="line">      <span class="keyword">SELECT</span> window_start, window_end, supplier_id, <span class="built_in">SUM</span>(price) <span class="keyword">as</span> price, <span class="built_in">COUNT</span>(<span class="operator">*</span>) <span class="keyword">as</span> cnt</span><br><span class="line">      <span class="keyword">FROM</span> <span class="keyword">TABLE</span>(</span><br><span class="line">        TUMBLE(<span class="keyword">TABLE</span> Bid, DESCRIPTOR(bidtime), <span class="type">INTERVAL</span> <span class="string">&#x27;10&#x27;</span> MINUTES))</span><br><span class="line">      <span class="keyword">GROUP</span> <span class="keyword">BY</span> window_start, window_end, supplier_id</span><br><span class="line">    )</span><br><span class="line">  ) <span class="keyword">WHERE</span> rownum <span class="operator">&lt;=</span> <span class="number">3</span>;</span><br><span class="line">  </span><br><span class="line">  </span><br><span class="line"><span class="operator">+</span><span class="comment">------------------+------------------+-------------+-------+-----+--------+</span></span><br><span class="line"><span class="operator">|</span>     window_start <span class="operator">|</span>       window_end <span class="operator">|</span> supplier_id <span class="operator">|</span> price <span class="operator">|</span> cnt <span class="operator">|</span> rownum <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">------------------+------------------+-------------+-------+-----+--------+</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-04</span><span class="number">-15</span> <span class="number">08</span>:<span class="number">00</span> <span class="operator">|</span> <span class="number">2020</span><span class="number">-04</span><span class="number">-15</span> <span class="number">08</span>:<span class="number">10</span> <span class="operator">|</span>   supplier1 <span class="operator">|</span>  <span class="number">6.00</span> <span class="operator">|</span>   <span class="number">2</span> <span class="operator">|</span>      <span class="number">1</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-04</span><span class="number">-15</span> <span class="number">08</span>:<span class="number">00</span> <span class="operator">|</span> <span class="number">2020</span><span class="number">-04</span><span class="number">-15</span> <span class="number">08</span>:<span class="number">10</span> <span class="operator">|</span>   supplier4 <span class="operator">|</span>  <span class="number">5.00</span> <span class="operator">|</span>   <span class="number">1</span> <span class="operator">|</span>      <span class="number">2</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-04</span><span class="number">-15</span> <span class="number">08</span>:<span class="number">00</span> <span class="operator">|</span> <span class="number">2020</span><span class="number">-04</span><span class="number">-15</span> <span class="number">08</span>:<span class="number">10</span> <span class="operator">|</span>   supplier2 <span class="operator">|</span>  <span class="number">4.00</span> <span class="operator">|</span>   <span class="number">1</span> <span class="operator">|</span>      <span class="number">3</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-04</span><span class="number">-15</span> <span class="number">08</span>:<span class="number">10</span> <span class="operator">|</span> <span class="number">2020</span><span class="number">-04</span><span class="number">-15</span> <span class="number">08</span>:<span class="number">20</span> <span class="operator">|</span>   supplier5 <span class="operator">|</span>  <span class="number">6.00</span> <span class="operator">|</span>   <span class="number">1</span> <span class="operator">|</span>      <span class="number">1</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-04</span><span class="number">-15</span> <span class="number">08</span>:<span class="number">10</span> <span class="operator">|</span> <span class="number">2020</span><span class="number">-04</span><span class="number">-15</span> <span class="number">08</span>:<span class="number">20</span> <span class="operator">|</span>   supplier2 <span class="operator">|</span>  <span class="number">3.00</span> <span class="operator">|</span>   <span class="number">1</span> <span class="operator">|</span>      <span class="number">2</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-04</span><span class="number">-15</span> <span class="number">08</span>:<span class="number">10</span> <span class="operator">|</span> <span class="number">2020</span><span class="number">-04</span><span class="number">-15</span> <span class="number">08</span>:<span class="number">20</span> <span class="operator">|</span>   supplier3 <span class="operator">|</span>  <span class="number">2.00</span> <span class="operator">|</span>   <span class="number">1</span> <span class="operator">|</span>      <span class="number">3</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">------------------+------------------+-------------+-------+-----+--------+</span></span><br></pre></td></tr></table></figure>
+
+
+
+
+
+<h2 id="表的参数配置"><a href="#表的参数配置" class="headerlink" title="表的参数配置"></a>表的参数配置</h2><h3 id="jdbc"><a href="#jdbc" class="headerlink" title="jdbc"></a>jdbc</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line">create table dim (</span><br><span class="line">  dim varchar ,</span><br><span class="line">  channel_eight_role_code varchar ,</span><br><span class="line">  channel_source_code varchar,</span><br><span class="line">  CHANNEL_INFO_ID varchar</span><br><span class="line">) with(</span><br><span class="line">  -- 声明连接器类型。flink会通过spi找到连接器，并且进行参数匹配</span><br><span class="line">  &#x27;connector.type&#x27; = &#x27;jdbc&#x27;,</span><br><span class="line">  </span><br><span class="line">  -- jdbc的url</span><br><span class="line">  &#x27;connector.url&#x27; = &#x27;jdbc:mysql://10.25.76.173:3310/ogg_syncer?useUnicode=true&amp;characterEncoding=UTF-8&amp;useSSL=false&#x27;,</span><br><span class="line">  </span><br><span class="line">  -- 表名称</span><br><span class="line">  &#x27;connector.table&#x27; = &#x27;epcis_epcisbase_channel_info&#x27;,</span><br><span class="line">  </span><br><span class="line">  -- 驱动类型</span><br><span class="line">  &#x27;connector.driver&#x27; = &#x27;com.mysql.jdbc.Driver&#x27;,</span><br><span class="line">  </span><br><span class="line">  -- 用过名和密码</span><br><span class="line">  &#x27;connector.username&#x27; = &#x27;root&#x27;,</span><br><span class="line">  &#x27;connector.password&#x27; = &#x27;root&#x27;,</span><br><span class="line"></span><br><span class="line">  -- jdbc作为维表的时候，缓存时间。cache默认未开启。</span><br><span class="line">  &#x27;connector.lookup.cache.ttl&#x27; = &#x27;60s&#x27;,</span><br><span class="line">  </span><br><span class="line">  --  jdbc作为维表的时候，缓存的最大行数。cache默认未开启。</span><br><span class="line">  &#x27;connector.lookup.cache.max-rows&#x27; = &#x27;100000&#x27;,</span><br><span class="line">  </span><br><span class="line">  -- jdbc作为维表的时候，如果查询失败，最大查询次数</span><br><span class="line">  &#x27;connector.lookup.max-retries&#x27; = &#x27;3&#x27;,</span><br><span class="line">  </span><br><span class="line">  -- jdbc写入缓存的最大行数。默认值5000</span><br><span class="line">  &#x27;connector.write.flush.max-rows&#x27; = &#x27;5000&#x27;,</span><br><span class="line">  </span><br><span class="line">  -- jdbc 写入缓存flush时间间隔。默认为0，立即写入</span><br><span class="line">  &#x27;connector.write.flush.interval&#x27; = &#x27;2s&#x27;,</span><br><span class="line">  </span><br><span class="line">  -- 写入失败，最大重试次数</span><br><span class="line">  &#x27;connector.write.max-retries&#x27; = &#x27;3&#x27; </span><br><span class="line">);</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h1 id="flinkCDC进行数据迁移"><a href="#flinkCDC进行数据迁移" class="headerlink" title="flinkCDC进行数据迁移"></a>flinkCDC进行数据迁移</h1><h3 id="增量读取事实表，关联维度表，间隔-批次写入ck中，完成数据的迁移"><a href="#增量读取事实表，关联维度表，间隔-批次写入ck中，完成数据的迁移" class="headerlink" title="增量读取事实表，关联维度表，间隔+批次写入ck中，完成数据的迁移"></a>增量读取事实表，关联维度表，间隔+批次写入ck中，完成数据的迁移</h3><h4 id="sql实现数据的读取"><a href="#sql实现数据的读取" class="headerlink" title="sql实现数据的读取"></a>sql实现数据的读取</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> cdc;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> com.alibaba.fastjson.JSON;</span><br><span class="line"><span class="keyword">import</span> com.alibaba.fastjson.JSONObject;</span><br><span class="line"><span class="keyword">import</span> com.alibaba.ververica.cdc.connectors.mysql.MySQLSource;</span><br><span class="line"><span class="keyword">import</span> lombok.AllArgsConstructor;</span><br><span class="line"><span class="keyword">import</span> lombok.Data;</span><br><span class="line"><span class="keyword">import</span> lombok.NoArgsConstructor;</span><br><span class="line"><span class="keyword">import</span> org.apache.flink.api.common.functions.MapFunction;</span><br><span class="line"><span class="keyword">import</span> org.apache.flink.streaming.api.datastream.DataStream;</span><br><span class="line"><span class="keyword">import</span> org.apache.flink.streaming.api.datastream.DataStreamSource;</span><br><span class="line"><span class="keyword">import</span> org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;</span><br><span class="line"><span class="keyword">import</span> org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;</span><br><span class="line"><span class="keyword">import</span> org.apache.flink.streaming.api.functions.source.SourceFunction;</span><br><span class="line"><span class="keyword">import</span> org.apache.flink.table.api.Table;</span><br><span class="line"><span class="keyword">import</span> org.apache.flink.table.api.TableResult;</span><br><span class="line"><span class="keyword">import</span> org.apache.flink.table.api.bridge.java.StreamTableEnvironment;</span><br><span class="line"><span class="keyword">import</span> org.apache.flink.types.Row;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.util.Date;</span><br><span class="line"><span class="keyword">import</span> java.util.Properties;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@author</span> nove</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@version</span> 1.0</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@date</span> 2021/12/10 16:55</span></span><br><span class="line"><span class="comment"> * cdc迁移数据</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">DateTrans</span> </span>&#123;</span><br><span class="line">    <span class="meta">@Data</span></span><br><span class="line">    <span class="meta">@AllArgsConstructor</span></span><br><span class="line">    <span class="meta">@NoArgsConstructor</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">Student</span></span>&#123;</span><br><span class="line">        <span class="keyword">private</span> Integer id;</span><br><span class="line">        <span class="keyword">private</span> String name;</span><br><span class="line">        <span class="keyword">private</span> Integer age;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Data</span></span><br><span class="line">    <span class="meta">@AllArgsConstructor</span></span><br><span class="line">    <span class="meta">@NoArgsConstructor</span></span><br><span class="line">    <span class="keyword">public</span>  <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">OrderTb</span>   </span>&#123;</span><br><span class="line">        <span class="keyword">private</span> Integer id;</span><br><span class="line">        <span class="keyword">private</span> String serialNo;</span><br><span class="line">        <span class="keyword">private</span> Integer price;</span><br><span class="line">        <span class="keyword">private</span> Date time;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        Properties properties = <span class="keyword">new</span> Properties();</span><br><span class="line">        properties.put(<span class="string">&quot;snapshot.mode&quot;</span>,<span class="string">&quot;schema_only&quot;</span>);<span class="comment">//debezium增量获取方式配置</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">//事实表的增量获取</span></span><br><span class="line">        SourceFunction&lt;JSONObject&gt; factTb = MySQLSource.&lt;JSONObject&gt;builder()</span><br><span class="line">                .hostname(<span class="string">&quot;47.108.204.135&quot;</span>)</span><br><span class="line">                .port(<span class="number">3310</span>)</span><br><span class="line">                .databaseList(<span class="string">&quot;company&quot;</span>) <span class="comment">// monitor all tables under inventory database</span></span><br><span class="line">                .tableList(<span class="string">&quot;company.order_tb&quot;</span>)<span class="comment">//库名+表名字，逗号分隔</span></span><br><span class="line">                .username(<span class="string">&quot;root&quot;</span>)</span><br><span class="line">                .password(<span class="string">&quot;hDtoLDuI&quot;</span>)</span><br><span class="line">                .debeziumProperties(properties)</span><br><span class="line">                .deserializer(<span class="keyword">new</span> CdcDwdDeserializationSchema()) <span class="comment">// converts SourceRecord to String</span></span><br><span class="line">                .build();</span><br><span class="line"></span><br><span class="line">        <span class="comment">//维度表的获取</span></span><br><span class="line">        SourceFunction&lt;JSONObject&gt; dimTb = MySQLSource.&lt;JSONObject&gt;builder()</span><br><span class="line">                .hostname(<span class="string">&quot;47.108.204.135&quot;</span>)</span><br><span class="line">                .port(<span class="number">3310</span>)</span><br><span class="line">                .databaseList(<span class="string">&quot;company&quot;</span>) <span class="comment">// monitor all tables under inventory database</span></span><br><span class="line">                .tableList(<span class="string">&quot;company.student&quot;</span>)<span class="comment">//库名+表名字，逗号分隔</span></span><br><span class="line">                .username(<span class="string">&quot;root&quot;</span>)</span><br><span class="line">                .password(<span class="string">&quot;hDtoLDuI&quot;</span>)</span><br><span class="line">                .deserializer(<span class="keyword">new</span> CdcDwdDeserializationSchema()) <span class="comment">// converts SourceRecord to String</span></span><br><span class="line">                .build();</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();</span><br><span class="line">        StreamTableEnvironment tableEnv = StreamTableEnvironment.create(env);</span><br><span class="line"></span><br><span class="line">        DataStreamSource&lt;JSONObject&gt; factSource = env.addSource(factTb);</span><br><span class="line">        DataStreamSource&lt;JSONObject&gt; dimSource = env.addSource(dimTb);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">        SingleOutputStreamOperator&lt;OrderTb&gt; factTbDs = factSource.map(<span class="keyword">new</span> MapFunction&lt;JSONObject, OrderTb&gt;() &#123;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="function"><span class="keyword">public</span> OrderTb <span class="title">map</span><span class="params">(JSONObject value)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">                <span class="keyword">return</span> JSON.parseObject(value.toString(), OrderTb.class);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br><span class="line">        SingleOutputStreamOperator&lt;Student&gt; dimTbDs = dimSource.map(<span class="keyword">new</span> MapFunction&lt;JSONObject, Student&gt;() &#123;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="function"><span class="keyword">public</span> Student <span class="title">map</span><span class="params">(JSONObject value)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">                <span class="keyword">return</span> JSON.parseObject(value.toString(), Student.class);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">        tableEnv.createTemporaryView(<span class="string">&quot;fact&quot;</span>,factTbDs);</span><br><span class="line">        tableEnv.createTemporaryView(<span class="string">&quot;dim&quot;</span>,dimTbDs);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">        Table table = tableEnv.sqlQuery(<span class="string">&quot;select * from fact a join dim b on a.id = b.id&quot;</span>);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">        table.execute().print();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+
+                
+            </div>
+            <hr/>
+
+            
+
+    <div class="reprint" id="reprint-statement">
+        
+            <div class="reprint__author">
+                <span class="reprint-meta" style="font-weight: bold;">
+                    <i class="fas fa-user">
+                        Author:
+                    </i>
+                </span>
+                <span class="reprint-info">
+                    <a href="/about" rel="external nofollow noreferrer">nove</a>
+                </span>
+            </div>
+            <div class="reprint__type">
+                <span class="reprint-meta" style="font-weight: bold;">
+                    <i class="fas fa-link">
+                        Link:
+                    </i>
+                </span>
+                <span class="reprint-info">
+                    <a href="http://example.com/2020/12/10/flink%E7%9A%84CDC%E6%8A%80%E6%9C%AF/">http://example.com/2020/12/10/flink%E7%9A%84CDC%E6%8A%80%E6%9C%AF/</a>
+                </span>
+            </div>
+            <div class="reprint__notice">
+                <span class="reprint-meta" style="font-weight: bold;">
+                    <i class="fas fa-copyright">
+                        Reprint policy:
+                    </i>
+                </span>
+                <span class="reprint-info">
+                    All articles in this blog are used except for special statements
+                    <a href="https://creativecommons.org/licenses/by/4.0/deed.zh" rel="external nofollow noreferrer" target="_blank">CC BY 4.0</a>
+                    reprint policy. If reproduced, please indicate source
+                    <a href="/about" target="_blank">nove</a>
+                    !
+                </span>
+            </div>
+        
+    </div>
+
+    <script async defer>
+      document.addEventListener("copy", function (e) {
+        let toastHTML = '<span>Copied successfully, please follow the reprint policy of this article</span><button class="btn-flat toast-action" onclick="navToReprintStatement()" style="font-size: smaller">more</a>';
+        M.toast({html: toastHTML})
+      });
+
+      function navToReprintStatement() {
+        $("html, body").animate({scrollTop: $("#reprint-statement").offset().top - 80}, 800);
+      }
+    </script>
+
+
+
+            <div class="tag_share" style="display: block;">
+                <div class="post-meta__tag-list" style="display: inline-block;">
+                    
+                        <div class="article-tag">
+                            
+                                <a href="/tags/flink/">
+                                    <span class="chip bg-color">flink</span>
+                                </a>
+                            
+                                <a href="/tags/cdc/">
+                                    <span class="chip bg-color">cdc</span>
+                                </a>
+                            
+                        </div>
+                    
+                </div>
+                <div class="post_share" style="zoom: 80%; width: fit-content; display: inline-block; float: right; margin: -0.15rem 0;">
+                    <link rel="stylesheet" type="text/css" href="/libs/share/css/share.min.css">
+<div id="article-share">
+
+    
+    <div class="social-share" data-sites="twitter,facebook,google,qq,qzone,wechat,weibo,douban,linkedin" data-wechat-qrcode-helper="<p>微信扫一扫即可分享！</p>"></div>
+    <script src="/libs/share/js/social-share.min.js"></script>
+    
+
+    
+
+</div>
+
+                </div>
+            </div>
+            
+                <style>
+    #reward {
+        margin: 40px 0;
+        text-align: center;
+    }
+
+    #reward .reward-link {
+        font-size: 1.4rem;
+        line-height: 38px;
+    }
+
+    #reward .btn-floating:hover {
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2), 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    #rewardModal {
+        width: 320px;
+        height: 350px;
+    }
+
+    #rewardModal .reward-title {
+        margin: 15px auto;
+        padding-bottom: 5px;
+    }
+
+    #rewardModal .modal-content {
+        padding: 10px;
+    }
+
+    #rewardModal .close {
+        position: absolute;
+        right: 15px;
+        top: 15px;
+        color: rgba(0, 0, 0, 0.5);
+        font-size: 1.3rem;
+        line-height: 20px;
+        cursor: pointer;
+    }
+
+    #rewardModal .close:hover {
+        color: #ef5350;
+        transform: scale(1.3);
+        -moz-transform:scale(1.3);
+        -webkit-transform:scale(1.3);
+        -o-transform:scale(1.3);
+    }
+
+    #rewardModal .reward-tabs {
+        margin: 0 auto;
+        width: 210px;
+    }
+
+    .reward-tabs .tabs {
+        height: 38px;
+        margin: 10px auto;
+        padding-left: 0;
+    }
+
+    .reward-content ul {
+        padding-left: 0 !important;
+    }
+
+    .reward-tabs .tabs .tab {
+        height: 38px;
+        line-height: 38px;
+    }
+
+    .reward-tabs .tab a {
+        color: #fff;
+        background-color: #ccc;
+    }
+
+    .reward-tabs .tab a:hover {
+        background-color: #ccc;
+        color: #fff;
+    }
+
+    .reward-tabs .wechat-tab .active {
+        color: #fff !important;
+        background-color: #22AB38 !important;
+    }
+
+    .reward-tabs .alipay-tab .active {
+        color: #fff !important;
+        background-color: #019FE8 !important;
+    }
+
+    .reward-tabs .reward-img {
+        width: 210px;
+        height: 210px;
+    }
+</style>
+
+<div id="reward">
+    <a href="#rewardModal" class="reward-link modal-trigger btn-floating btn-medium waves-effect waves-light red">赏</a>
+
+    <!-- Modal Structure -->
+    <div id="rewardModal" class="modal">
+        <div class="modal-content">
+            <a class="close modal-close"><i class="fas fa-times"></i></a>
+            <h4 class="reward-title">你的赏识是我前进的动力</h4>
+            <div class="reward-content">
+                <div class="reward-tabs">
+                    <ul class="tabs row">
+                        <li class="tab col s6 alipay-tab waves-effect waves-light"><a href="#alipay">支付宝</a></li>
+                        <li class="tab col s6 wechat-tab waves-effect waves-light"><a href="#wechat">微 信</a></li>
+                    </ul>
+                    <div id="alipay">
+                        <img src="/medias/reward/alipay.jpg" class="reward-img" alt="支付宝打赏二维码">
+                    </div>
+                    <div id="wechat">
+                        <img src="/medias/reward/wechat.png" class="reward-img" alt="微信打赏二维码">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(function () {
+        $('.tabs').tabs();
+    });
+</script>
+
+            
+        </div>
+    </div>
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+<article id="prenext-posts" class="prev-next articles">
+    <div class="row article-row">
+        
+        <div class="article col s12 m6" data-aos="fade-up">
+            <div class="article-badge left-badge text-color">
+                <i class="fas fa-chevron-left"></i>&nbsp;Previous</div>
+            <div class="card">
+                <a href="/2021/12/10/hello-world/">
+                    <div class="card-image">
+                        
+                        
+                        <img src="/medias/featureimages/12.jpg" class="responsive-img" alt="Hello World">
+                        
+                        <span class="card-title">Hello World</span>
+                    </div>
+                </a>
+                <div class="card-content article-content">
+                    <div class="summary block-with-text">
+                        
+                            
+                        
+                    </div>
+                    <div class="publish-info">
+                        <span class="publish-date">
+                            <i class="far fa-clock fa-fw icon-date"></i>2021-12-10
+                        </span>
+                        <span class="publish-author">
+                            
+                            <i class="fas fa-user fa-fw"></i>
+                            John Doe
+                            
+                        </span>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+        
+        
+        <div class="article col s12 m6" data-aos="fade-up">
+            <div class="article-badge right-badge text-color">
+                Current&nbsp;<i class="far fa-dot-circle"></i>
+            </div>
+            <div class="card">
+                <a href="/2020/12/10/flink%E7%9A%84CDC%E6%8A%80%E6%9C%AF/">
+                    <div class="card-image">
+                        
+                        
+                        <img src="/medias/featureimages/13.jpg" class="responsive-img" alt="flink的CDC技术">
+                        
+                        <span class="card-title">flink的CDC技术</span>
+                    </div>
+                </a>
+                <div class="card-content article-content">
+                    <div class="summary block-with-text">
+                        
+                            
+                        
+                    </div>
+                    <div class="publish-info">
+                            <span class="publish-date">
+                                <i class="far fa-clock fa-fw icon-date"></i>2020-12-10
+                            </span>
+                        <span class="publish-author">
+                            
+                            <i class="fas fa-bookmark fa-fw icon-category"></i>
+                            
+                            <a href="/categories/Markdown/" class="post-category">
+                                    Markdown
+                                </a>
+                            
+                            
+                        </span>
+                    </div>
+                </div>
+
+                
+                <div class="card-action article-tags">
+                    
+                    <a href="/tags/flink/">
+                        <span class="chip bg-color">flink</span>
+                    </a>
+                    
+                    <a href="/tags/cdc/">
+                        <span class="chip bg-color">cdc</span>
+                    </a>
+                    
+                </div>
+                
+            </div>
+        </div>
+        
+    </div>
+</article>
+
+</div>
+
+
+
+<!-- 代码块功能依赖 -->
+<script type="text/javascript" src="/libs/codeBlock/codeBlockFuction.js"></script>
+
+<!-- 代码语言 -->
+
+<script type="text/javascript" src="/libs/codeBlock/codeLang.js"></script>
+
+
+<!-- 代码块复制 -->
+
+<script type="text/javascript" src="/libs/codeBlock/codeCopy.js"></script>
+
+
+<!-- 代码块收缩 -->
+
+<script type="text/javascript" src="/libs/codeBlock/codeShrink.js"></script>
+
+
+    
+
+</main>
+
+
+
+
+    <footer class="page-footer bg-color">
+    
+        <link rel="stylesheet" href="/libs/aplayer/APlayer.min.css">
+<style>
+    .aplayer .aplayer-lrc p {
+        
+        display: none;
+        
+        font-size: 12px;
+        font-weight: 700;
+        line-height: 16px !important;
+    }
+
+    .aplayer .aplayer-lrc p.aplayer-lrc-current {
+        
+        display: none;
+        
+        font-size: 15px;
+        color: #42b983;
+    }
+
+    
+    .aplayer.aplayer-fixed.aplayer-narrow .aplayer-body {
+        left: -66px !important;
+    }
+
+    .aplayer.aplayer-fixed.aplayer-narrow .aplayer-body:hover {
+        left: 0px !important;
+    }
+
+    
+</style>
+<div class="">
+    
+    <div class="row">
+        <meting-js class="col l8 offset-l2 m10 offset-m1 s12"
+                   server="netease"
+                   type="playlist"
+                   id="503838841"
+                   fixed='true'
+                   autoplay='false'
+                   theme='#42b983'
+                   loop='all'
+                   order='random'
+                   preload='auto'
+                   volume='0.7'
+                   list-folded='true'
+        >
+        </meting-js>
+    </div>
+</div>
+
+<script src="/libs/aplayer/APlayer.min.js"></script>
+<script src="/libs/aplayer/Meting.min.js"></script>
+
+    
+
+    <div class="container row center-align"
+         style="margin-bottom: 0px !important;">
+        <div class="col s12 m8 l8 copy-right">
+            Copyright&nbsp;&copy;
+            
+                <span id="year">2019-2021</span>
+            
+            <a href="/about" target="_blank">John Doe</a>
+            |&nbsp;Powered by&nbsp;<a href="https://hexo.io/" target="_blank">Hexo</a>
+            |&nbsp;Theme&nbsp;<a href="https://github.com/blinkfox/hexo-theme-matery" target="_blank">Matery</a>
+            <br>
+            
+            
+            
+                
+            
+            
+                <span id="busuanzi_container_site_pv">
+                &nbsp;|&nbsp;<i class="far fa-eye"></i>&nbsp;Total visits:&nbsp;
+                    <span id="busuanzi_value_site_pv" class="white-color"></span>
+            </span>
+            
+            
+                <span id="busuanzi_container_site_uv">
+                &nbsp;|&nbsp;<i class="fas fa-users"></i>&nbsp;Total visitors:&nbsp;
+                    <span id="busuanzi_value_site_uv" class="white-color"></span>
+            </span>
+            
+            <br>
+
+            <!-- 运行天数提醒. -->
+            
+            <br>
+            
+        </div>
+        <div class="col s12 m4 l4 social-link social-statis">
+    <a href="https://github.com/blinkfox" class="tooltipped" target="_blank" data-tooltip="访问我的GitHub" data-position="top" data-delay="50">
+        <i class="fab fa-github"></i>
+    </a>
+
+
+
+    <a href="mailto:1181062873@qq.com" class="tooltipped" target="_blank" data-tooltip="邮件联系我" data-position="top" data-delay="50">
+        <i class="fas fa-envelope-open"></i>
+    </a>
+
+
+
+
+
+
+
+    <a href="tencent://AddContact/?fromId=50&fromSubId=1&subcmd=all&uin=1181062873" class="tooltipped" target="_blank" data-tooltip="QQ联系我: 1181062873" data-position="top" data-delay="50">
+        <i class="fab fa-qq"></i>
+    </a>
+
+
+
+
+
+
+
+    <a href="/atom.xml" class="tooltipped" target="_blank" data-tooltip="RSS 订阅" data-position="top" data-delay="50">
+        <i class="fas fa-rss"></i>
+    </a>
+
+</div>
+    </div>
+</footer>
+
+<div class="progress-bar"></div>
+
+
+    <!-- 搜索遮罩框 -->
+<div id="searchModal" class="modal">
+    <div class="modal-content">
+        <div class="search-header">
+            <span class="title"><i class="fas fa-search"></i>&nbsp;&nbsp;Search</span>
+            <input type="search" id="searchInput" name="s" placeholder="Please enter a search keyword"
+                   class="search-input">
+        </div>
+        <div id="searchResult"></div>
+    </div>
+</div>
+
+<script type="text/javascript">
+$(function () {
+    var searchFunc = function (path, search_id, content_id) {
+        'use strict';
+        $.ajax({
+            url: path,
+            dataType: "xml",
+            success: function (xmlResponse) {
+                // get the contents from search data
+                var datas = $("entry", xmlResponse).map(function () {
+                    return {
+                        title: $("title", this).text(),
+                        content: $("content", this).text(),
+                        url: $("url", this).text()
+                    };
+                }).get();
+                var $input = document.getElementById(search_id);
+                var $resultContent = document.getElementById(content_id);
+                $input.addEventListener('input', function () {
+                    var str = '<ul class=\"search-result-list\">';
+                    var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+                    $resultContent.innerHTML = "";
+                    if (this.value.trim().length <= 0) {
+                        return;
+                    }
+                    // perform local searching
+                    datas.forEach(function (data) {
+                        var isMatch = true;
+                        var data_title = data.title.trim().toLowerCase();
+                        var data_content = data.content.trim().replace(/<[^>]+>/g, "").toLowerCase();
+                        var data_url = data.url;
+                        data_url = data_url.indexOf('/') === 0 ? data.url : '/' + data_url;
+                        var index_title = -1;
+                        var index_content = -1;
+                        var first_occur = -1;
+                        // only match artiles with not empty titles and contents
+                        if (data_title !== '' && data_content !== '') {
+                            keywords.forEach(function (keyword, i) {
+                                index_title = data_title.indexOf(keyword);
+                                index_content = data_content.indexOf(keyword);
+                                if (index_title < 0 && index_content < 0) {
+                                    isMatch = false;
+                                } else {
+                                    if (index_content < 0) {
+                                        index_content = 0;
+                                    }
+                                    if (i === 0) {
+                                        first_occur = index_content;
+                                    }
+                                }
+                            });
+                        }
+                        // show search results
+                        if (isMatch) {
+                            str += "<li><a href='" + data_url + "' class='search-result-title'>" + data_title + "</a>";
+                            var content = data.content.trim().replace(/<[^>]+>/g, "");
+                            if (first_occur >= 0) {
+                                // cut out 100 characters
+                                var start = first_occur - 20;
+                                var end = first_occur + 80;
+                                if (start < 0) {
+                                    start = 0;
+                                }
+                                if (start === 0) {
+                                    end = 100;
+                                }
+                                if (end > content.length) {
+                                    end = content.length;
+                                }
+                                var match_content = content.substr(start, end);
+                                // highlight all keywords
+                                keywords.forEach(function (keyword) {
+                                    var regS = new RegExp(keyword, "gi");
+                                    match_content = match_content.replace(regS, "<em class=\"search-keyword\">" + keyword + "</em>");
+                                });
+
+                                str += "<p class=\"search-result\">" + match_content + "...</p>"
+                            }
+                            str += "</li>";
+                        }
+                    });
+                    str += "</ul>";
+                    $resultContent.innerHTML = str;
+                });
+            }
+        });
+    };
+
+    searchFunc('/search.xml', 'searchInput', 'searchResult');
+});
+</script>
+
+    <!-- 回到顶部按钮 -->
+<div id="backTop" class="top-scroll">
+    <a class="btn-floating btn-large waves-effect waves-light" href="#!">
+        <i class="fas fa-arrow-up"></i>
+    </a>
+</div>
+
+
+    <script src="/libs/materialize/materialize.min.js"></script>
+    <script src="/libs/masonry/masonry.pkgd.min.js"></script>
+    <script src="/libs/aos/aos.js"></script>
+    <script src="/libs/scrollprogress/scrollProgress.min.js"></script>
+    <script src="/libs/lightGallery/js/lightgallery-all.min.js"></script>
+    <script src="/js/matery.js"></script>
+
+    
+
+    
+
+    <!-- 雪花特效 -->
+    
+
+    <!-- 鼠标星星特效 -->
+    
+
+     
+        <script src="https://ssl.captcha.qq.com/TCaptcha.js"></script>
+        <script src="/libs/others/TencentCaptcha.js"></script>
+        <button id="TencentCaptcha" data-appid="xxxxxxxxxx" data-cbfn="callback" type="button" hidden></button>
+    
+
+    <!-- Baidu Analytics -->
+
+    <!-- Baidu Push -->
+
+<script>
+    (function () {
+        var bp = document.createElement('script');
+        var curProtocol = window.location.protocol.split(':')[0];
+        if (curProtocol === 'https') {
+            bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+        } else {
+            bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+        }
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(bp, s);
+    })();
+</script>
+
+    
+    <script src="/libs/others/clicklove.js" async="async"></script>
+    
+    
+    <script async src="/libs/others/busuanzi.pure.mini.js"></script>
+    
+
+    
+
+    
+
+    <!--腾讯兔小巢-->
+    
+    
+
+    
+
+    
+
+    
+    <script src="/libs/instantpage/instantpage.js" type="module"></script>
+    
+
+</body>
+
+</html>
