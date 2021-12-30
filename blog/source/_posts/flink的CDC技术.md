@@ -336,7 +336,7 @@ public class DateTrans {
                 .databaseList("company") // monitor all tables under inventory database
                 .tableList("company.student")//库名+表名字，逗号分隔
                 .username("root")
-                .password("hDtoLDuI")
+                .password("****")
                 .deserializer(new CdcDwdDeserializationSchema()) // converts SourceRecord to String
                 .build();
 

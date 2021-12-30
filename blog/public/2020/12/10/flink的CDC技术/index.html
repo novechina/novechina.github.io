@@ -662,46 +662,46 @@ Statement：记录执">
 
 
 
-<h2 id="表的参数配置"><a href="#表的参数配置" class="headerlink" title="表的参数配置"></a>表的参数配置</h2><h3 id="jdbc"><a href="#jdbc" class="headerlink" title="jdbc"></a>jdbc</h3><pre class="language-shell" data-language="shell"><code class="language-shell">create table dim (
+<h2 id="表的参数配置"><a href="#表的参数配置" class="headerlink" title="表的参数配置"></a>表的参数配置</h2><h3 id="jdbc"><a href="#jdbc" class="headerlink" title="jdbc"></a>jdbc</h3><pre class="language-shell" data-language="shell"><code class="language-shell">create table dim <span class="token punctuation">(</span>
   dim varchar ,
   channel_eight_role_code varchar ,
   channel_source_code varchar,
   CHANNEL_INFO_ID varchar
-) with(
+<span class="token punctuation">)</span> with<span class="token punctuation">(</span>
   -- 声明连接器类型。flink会通过spi找到连接器，并且进行参数匹配
-  &#39;connector.type&#39; &#x3D; &#39;jdbc&#39;,
+  <span class="token string">'connector.type'</span> <span class="token operator">=</span> <span class="token string">'jdbc'</span>,
   
   -- jdbc的url
-  &#39;connector.url&#39; &#x3D; &#39;jdbc:mysql:&#x2F;&#x2F;10.25.76.173:3310&#x2F;ogg_syncer?useUnicode&#x3D;true&amp;characterEncoding&#x3D;UTF-8&amp;useSSL&#x3D;false&#39;,
+  <span class="token string">'connector.url'</span> <span class="token operator">=</span> <span class="token string">'jdbc:mysql://10.25.76.173:3310/ogg_syncer?useUnicode=true&amp;characterEncoding=UTF-8&amp;useSSL=false'</span>,
   
   -- 表名称
-  &#39;connector.table&#39; &#x3D; &#39;epcis_epcisbase_channel_info&#39;,
+  <span class="token string">'connector.table'</span> <span class="token operator">=</span> <span class="token string">'epcis_epcisbase_channel_info'</span>,
   
   -- 驱动类型
-  &#39;connector.driver&#39; &#x3D; &#39;com.mysql.jdbc.Driver&#39;,
+  <span class="token string">'connector.driver'</span> <span class="token operator">=</span> <span class="token string">'com.mysql.jdbc.Driver'</span>,
   
   -- 用过名和密码
-  &#39;connector.username&#39; &#x3D; &#39;root&#39;,
-  &#39;connector.password&#39; &#x3D; &#39;root&#39;,
+  <span class="token string">'connector.username'</span> <span class="token operator">=</span> <span class="token string">'root'</span>,
+  <span class="token string">'connector.password'</span> <span class="token operator">=</span> <span class="token string">'root'</span>,
 
   -- jdbc作为维表的时候，缓存时间。cache默认未开启。
-  &#39;connector.lookup.cache.ttl&#39; &#x3D; &#39;60s&#39;,
+  <span class="token string">'connector.lookup.cache.ttl'</span> <span class="token operator">=</span> <span class="token string">'60s'</span>,
   
   --  jdbc作为维表的时候，缓存的最大行数。cache默认未开启。
-  &#39;connector.lookup.cache.max-rows&#39; &#x3D; &#39;100000&#39;,
+  <span class="token string">'connector.lookup.cache.max-rows'</span> <span class="token operator">=</span> <span class="token string">'100000'</span>,
   
   -- jdbc作为维表的时候，如果查询失败，最大查询次数
-  &#39;connector.lookup.max-retries&#39; &#x3D; &#39;3&#39;,
+  <span class="token string">'connector.lookup.max-retries'</span> <span class="token operator">=</span> <span class="token string">'3'</span>,
   
   -- jdbc写入缓存的最大行数。默认值5000
-  &#39;connector.write.flush.max-rows&#39; &#x3D; &#39;5000&#39;,
+  <span class="token string">'connector.write.flush.max-rows'</span> <span class="token operator">=</span> <span class="token string">'5000'</span>,
   
   -- jdbc 写入缓存flush时间间隔。默认为0，立即写入
-  &#39;connector.write.flush.interval&#39; &#x3D; &#39;2s&#39;,
+  <span class="token string">'connector.write.flush.interval'</span> <span class="token operator">=</span> <span class="token string">'2s'</span>,
   
   -- 写入失败，最大重试次数
-  &#39;connector.write.max-retries&#39; &#x3D; &#39;3&#39; 
-);
+  <span class="token string">'connector.write.max-retries'</span> <span class="token operator">=</span> <span class="token string">'3'</span> 
+<span class="token punctuation">)</span><span class="token punctuation">;</span>
 </code></pre>
 
 <h1 id="flinkCDC进行数据迁移"><a href="#flinkCDC进行数据迁移" class="headerlink" title="flinkCDC进行数据迁移"></a>flinkCDC进行数据迁移</h1><h3 id="增量读取事实表，关联维度表，间隔-批次写入ck中，完成数据的迁移"><a href="#增量读取事实表，关联维度表，间隔-批次写入ck中，完成数据的迁移" class="headerlink" title="增量读取事实表，关联维度表，间隔+批次写入ck中，完成数据的迁移"></a>增量读取事实表，关联维度表，间隔+批次写入ck中，完成数据的迁移</h3><h4 id="sql实现数据的读取"><a href="#sql实现数据的读取" class="headerlink" title="sql实现数据的读取"></a>sql实现数据的读取</h4><pre class="language-java" data-language="java"><code class="language-java"><span class="token keyword">package</span> <span class="token namespace">cdc</span><span class="token punctuation">;</span>
@@ -774,7 +774,7 @@ Statement：记录执">
                 <span class="token punctuation">.</span><span class="token function">databaseList</span><span class="token punctuation">(</span><span class="token string">"company"</span><span class="token punctuation">)</span> <span class="token comment">// monitor all tables under inventory database</span>
                 <span class="token punctuation">.</span><span class="token function">tableList</span><span class="token punctuation">(</span><span class="token string">"company.student"</span><span class="token punctuation">)</span><span class="token comment">//库名+表名字，逗号分隔</span>
                 <span class="token punctuation">.</span><span class="token function">username</span><span class="token punctuation">(</span><span class="token string">"root"</span><span class="token punctuation">)</span>
-                <span class="token punctuation">.</span><span class="token function">password</span><span class="token punctuation">(</span><span class="token string">"hDtoLDuI"</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">password</span><span class="token punctuation">(</span><span class="token string">"****"</span><span class="token punctuation">)</span>
                 <span class="token punctuation">.</span><span class="token function">deserializer</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">CdcDwdDeserializationSchema</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token comment">// converts SourceRecord to String</span>
                 <span class="token punctuation">.</span><span class="token function">build</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
 
