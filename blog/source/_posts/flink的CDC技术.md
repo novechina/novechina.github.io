@@ -2,20 +2,11 @@
 title: flink的CDC技术
 date: 2020-12-10 09:25:00
 author: nove
-top: true
-hide: false
-cover: true
-coverImg: /images/1.jpg
-password: 8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92
-toc: false
-mathjax: false
-summary: 
-categories: Markdown
+categories: 大数据
 tags:
   - flink
   - cdc
 ---
-[toc]
 # flink的CDC技术
 
 ## 从mysql的binlog谈起
@@ -70,7 +61,7 @@ tags:
 
 * 返回格式
 
-  ~~~
+  ~~~json
   Struct{after=Struct{id=2,name=kate,age=28},source=Struct{version=1.2.1.Final,connector=mysql,name=mysql_binlog_source,ts_ms=0,snapshot=true,db=company,table=student,server_id=0,file=mysql-bin.000001,pos=4755,row=0},op=c,ts_ms=1637292711750}
    1，同时存在 beforeStruct 跟 afterStruct数据的话，就代表是update的数据
    2,只存在 beforeStruct 就是delete数据

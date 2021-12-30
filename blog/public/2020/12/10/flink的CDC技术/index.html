@@ -5,14 +5,13 @@
 <head>
     <meta charset="utf-8">
     <meta name="keywords" content="flink的CDC技术, Hexo">
-    <meta name="description" content="[toc]
-flink的CDC技术从mysql的binlog谈起
+    <meta name="description" content="flink的CDC技术从mysql的binlog谈起
 记录所有的数据变更和写入
 用于主从复制和数据恢复
 必须提交了事务才能记录binlog
 重启，手动刷新和日志文件大于了指定大小的时候，生成新的日志文件
 日志格式
-Stateme">
+Statement：记录执">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta name="renderer" content="webkit|ie-stand|ie-comp">
@@ -331,10 +330,104 @@ Stateme">
 
 
 
-<main class="container content">
+<main class="post-container content">
 
     
-    <!-- 文章内容详情 -->
+    <link rel="stylesheet" href="/libs/tocbot/tocbot.css">
+<style>
+    #articleContent h1::before,
+    #articleContent h2::before,
+    #articleContent h3::before,
+    #articleContent h4::before,
+    #articleContent h5::before,
+    #articleContent h6::before {
+        display: block;
+        content: " ";
+        height: 100px;
+        margin-top: -100px;
+        visibility: hidden;
+    }
+
+    #articleContent :focus {
+        outline: none;
+    }
+
+    .toc-fixed {
+        position: fixed;
+        top: 64px;
+    }
+
+    .toc-widget {
+        width: 345px;
+        padding-left: 20px;
+    }
+
+    .toc-widget .toc-title {
+        padding: 35px 0 15px 17px;
+        font-size: 1.5rem;
+        font-weight: bold;
+        line-height: 1.5rem;
+    }
+
+    .toc-widget ol {
+        padding: 0;
+        list-style: none;
+    }
+
+    #toc-content {
+        padding-bottom: 30px;
+        overflow: auto;
+    }
+
+    #toc-content ol {
+        padding-left: 10px;
+    }
+
+    #toc-content ol li {
+        padding-left: 10px;
+    }
+
+    #toc-content .toc-link:hover {
+        color: #42b983;
+        font-weight: 700;
+        text-decoration: underline;
+    }
+
+    #toc-content .toc-link::before {
+        background-color: transparent;
+        max-height: 25px;
+
+        position: absolute;
+        right: 23.5vw;
+        display: block;
+    }
+
+    #toc-content .is-active-link {
+        color: #42b983;
+    }
+
+    #floating-toc-btn {
+        position: fixed;
+        right: 15px;
+        bottom: 76px;
+        padding-top: 15px;
+        margin-bottom: 0;
+        z-index: 998;
+    }
+
+    #floating-toc-btn .btn-floating {
+        width: 48px;
+        height: 48px;
+    }
+
+    #floating-toc-btn .btn-floating i {
+        line-height: 48px;
+        font-size: 1.4rem;
+    }
+</style>
+<div class="row">
+    <div id="main-content" class="col s12 m12 l9">
+        <!-- 文章内容详情 -->
 <div id="artDetail">
     <div class="card">
         <div class="card-content article-info">
@@ -359,8 +452,8 @@ Stateme">
                     <div class="post-cate">
                         <i class="fas fa-bookmark fa-fw icon-category"></i>
                         
-                            <a href="/categories/Markdown/" class="post-category">
-                                Markdown
+                            <a href="/categories/%E5%A4%A7%E6%95%B0%E6%8D%AE/" class="post-category">
+                                大数据
                             </a>
                         
                     </div>
@@ -388,13 +481,15 @@ Stateme">
         <hr class="clearfix">
 
         
+        <!-- 是否加载使用自带的 prismjs. -->
+        <link rel="stylesheet" href="/libs/prism/prism.css">
+        
 
         
 
         <div class="card-content article-card-content">
             <div id="articleContent">
-                <p>[toc]</p>
-<h1 id="flink的CDC技术"><a href="#flink的CDC技术" class="headerlink" title="flink的CDC技术"></a>flink的CDC技术</h1><h2 id="从mysql的binlog谈起"><a href="#从mysql的binlog谈起" class="headerlink" title="从mysql的binlog谈起"></a>从mysql的binlog谈起</h2><ul>
+                <h1 id="flink的CDC技术"><a href="#flink的CDC技术" class="headerlink" title="flink的CDC技术"></a>flink的CDC技术</h1><h2 id="从mysql的binlog谈起"><a href="#从mysql的binlog谈起" class="headerlink" title="从mysql的binlog谈起"></a>从mysql的binlog谈起</h2><ul>
 <li>记录所有的数据变更和写入</li>
 <li>用于主从复制和数据恢复</li>
 <li>必须提交了事务才能记录binlog</li>
@@ -430,7 +525,7 @@ Stateme">
 <li><p>固定的json响应格式</p>
 </li>
 </ul>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&#123; &quot;schema&quot;: &#123;    ...  &#125;, &quot;payload&quot;: &#123;    ... &#125;, &quot;schema&quot;: &#123;    ... &#125;, &quot;payload&quot;: &#123;    ... &#125;, &#125;</span><br></pre></td></tr></table></figure>
+<pre class="language-none"><code class="language-none">&#123; &quot;schema&quot;: &#123;    ...  &#125;, &quot;payload&quot;: &#123;    ... &#125;, &quot;schema&quot;: &#123;    ... &#125;, &quot;payload&quot;: &#123;    ... &#125;, &#125;</code></pre>
 <table>
 <thead>
 <tr>
@@ -462,36 +557,261 @@ Stateme">
 </tbody></table>
 <h2 id="flink"><a href="#flink" class="headerlink" title="flink"></a>flink</h2><h3 id="debezium嵌入flink"><a href="#debezium嵌入flink" class="headerlink" title="debezium嵌入flink"></a>debezium嵌入flink</h3><ul>
 <li><p>返回格式</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Struct&#123;after=Struct&#123;id=2,name=kate,age=28&#125;,source=Struct&#123;version=1.2.1.Final,connector=mysql,name=mysql_binlog_source,ts_ms=0,snapshot=true,db=company,table=student,server_id=0,file=mysql-bin.000001,pos=4755,row=0&#125;,op=c,ts_ms=1637292711750&#125;</span><br><span class="line"> 1，同时存在 beforeStruct 跟 afterStruct数据的话，就代表是update的数据</span><br><span class="line"> 2,只存在 beforeStruct 就是delete数据</span><br><span class="line"> 3，只存在 afterStruct数据 就是insert数据</span><br></pre></td></tr></table></figure></li>
+<pre class="language-json" data-language="json"><code class="language-json">Struct<span class="token punctuation">&#123;</span>after=Struct<span class="token punctuation">&#123;</span>id=<span class="token number">2</span><span class="token punctuation">,</span>name=kate<span class="token punctuation">,</span>age=<span class="token number">28</span><span class="token punctuation">&#125;</span><span class="token punctuation">,</span>source=Struct<span class="token punctuation">&#123;</span>version=<span class="token number">1.2</span>.<span class="token number">1</span>.Final<span class="token punctuation">,</span>connector=mysql<span class="token punctuation">,</span>name=mysql_binlog_source<span class="token punctuation">,</span>ts_ms=<span class="token number">0</span><span class="token punctuation">,</span>snapshot=<span class="token boolean">true</span><span class="token punctuation">,</span>db=company<span class="token punctuation">,</span>table=student<span class="token punctuation">,</span>server_id=<span class="token number">0</span><span class="token punctuation">,</span>file=mysql-bin.<span class="token number">000001</span><span class="token punctuation">,</span>pos=<span class="token number">4755</span><span class="token punctuation">,</span>row=<span class="token number">0</span><span class="token punctuation">&#125;</span><span class="token punctuation">,</span>op=c<span class="token punctuation">,</span>ts_ms=<span class="token number">1637292711750</span><span class="token punctuation">&#125;</span>
+ <span class="token number">1</span>，同时存在 beforeStruct 跟 afterStruct数据的话，就代表是update的数据
+ <span class="token number">2</span><span class="token punctuation">,</span>只存在 beforeStruct 就是delete数据
+ <span class="token number">3</span>，只存在 afterStruct数据 就是insert数据</code></pre></li>
 <li><p>转化为json，解析</p>
 </li>
 </ul>
-<h1 id="flinkSQL"><a href="#flinkSQL" class="headerlink" title="flinkSQL"></a>flinkSQL</h1><h2 id="语法"><a href="#语法" class="headerlink" title="语法"></a>语法</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> TO_TIMESTAMP(tm_v) <span class="keyword">from</span> tm</span><br><span class="line">#String 转化为时间类型</span><br></pre></td></tr></table></figure>
+<h1 id="flinkSQL"><a href="#flinkSQL" class="headerlink" title="flinkSQL"></a>flinkSQL</h1><h2 id="语法"><a href="#语法" class="headerlink" title="语法"></a>语法</h2><pre class="language-sql" data-language="sql"><code class="language-sql"><span class="token keyword">select</span> TO_TIMESTAMP<span class="token punctuation">(</span>tm_v<span class="token punctuation">)</span> <span class="token keyword">from</span> tm
+<span class="token comment">#String 转化为时间类型</span></code></pre>
 
-<h2 id="窗口函数"><a href="#窗口函数" class="headerlink" title="窗口函数"></a>窗口函数</h2><h3 id="滚动窗口"><a href="#滚动窗口" class="headerlink" title="滚动窗口"></a>滚动窗口</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">#窗口<span class="number">10</span>s</span><br><span class="line"><span class="keyword">select</span> userId</span><br><span class="line">, <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">as</span> orderCount</span><br><span class="line">, <span class="built_in">max</span>(money) <span class="keyword">as</span> maxMoney</span><br><span class="line">,<span class="built_in">min</span>(money) <span class="keyword">as</span> minMoney</span><br><span class="line"> ,<span class="built_in">min</span>(createTime) </span><br><span class="line">,tumble_start(createTime, <span class="type">INTERVAL</span> <span class="string">&#x27;10&#x27;</span> <span class="keyword">SECOND</span>) </span><br><span class="line">,tumble_end(createTime, <span class="type">INTERVAL</span> <span class="string">&#x27;10&#x27;</span> <span class="keyword">SECOND</span>) </span><br><span class="line"><span class="keyword">from</span> tb_order</span><br><span class="line"> <span class="keyword">group</span> <span class="keyword">by</span> userId,tumble(createTime, <span class="type">INTERVAL</span> <span class="string">&#x27;10&#x27;</span> <span class="keyword">SECOND</span>) </span><br></pre></td></tr></table></figure>
+<h2 id="窗口函数"><a href="#窗口函数" class="headerlink" title="窗口函数"></a>窗口函数</h2><h3 id="滚动窗口"><a href="#滚动窗口" class="headerlink" title="滚动窗口"></a>滚动窗口</h3><pre class="language-sql" data-language="sql"><code class="language-sql"><span class="token comment">#窗口10s</span>
+<span class="token keyword">select</span> userId
+<span class="token punctuation">,</span> <span class="token function">count</span><span class="token punctuation">(</span><span class="token operator">*</span><span class="token punctuation">)</span> <span class="token keyword">as</span> orderCount
+<span class="token punctuation">,</span> <span class="token function">max</span><span class="token punctuation">(</span>money<span class="token punctuation">)</span> <span class="token keyword">as</span> maxMoney
+<span class="token punctuation">,</span><span class="token function">min</span><span class="token punctuation">(</span>money<span class="token punctuation">)</span> <span class="token keyword">as</span> minMoney
+ <span class="token punctuation">,</span><span class="token function">min</span><span class="token punctuation">(</span>createTime<span class="token punctuation">)</span> 
+<span class="token punctuation">,</span>tumble_start<span class="token punctuation">(</span>createTime<span class="token punctuation">,</span> <span class="token keyword">INTERVAL</span> <span class="token string">'10'</span> <span class="token keyword">SECOND</span><span class="token punctuation">)</span> 
+<span class="token punctuation">,</span>tumble_end<span class="token punctuation">(</span>createTime<span class="token punctuation">,</span> <span class="token keyword">INTERVAL</span> <span class="token string">'10'</span> <span class="token keyword">SECOND</span><span class="token punctuation">)</span> 
+<span class="token keyword">from</span> tb_order
+ <span class="token keyword">group</span> <span class="token keyword">by</span> userId<span class="token punctuation">,</span>tumble<span class="token punctuation">(</span>createTime<span class="token punctuation">,</span> <span class="token keyword">INTERVAL</span> <span class="token string">'10'</span> <span class="token keyword">SECOND</span><span class="token punctuation">)</span> </code></pre>
 
-<h3 id="滑动窗口"><a href="#滑动窗口" class="headerlink" title="滑动窗口"></a>滑动窗口</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">#窗口<span class="number">60</span>s，间隔<span class="number">5</span>s</span><br><span class="line"><span class="keyword">select</span> userId</span><br><span class="line">, <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">as</span> orderCount</span><br><span class="line">, <span class="built_in">max</span>(money) <span class="keyword">as</span> maxMoney</span><br><span class="line">,<span class="built_in">min</span>(money) <span class="keyword">as</span> minMoney</span><br><span class="line"> ,<span class="built_in">min</span>(createTime) </span><br><span class="line">,hop_start(createTime, <span class="type">INTERVAL</span> <span class="string">&#x27;5&#x27;</span> <span class="keyword">SECOND</span>,<span class="type">INTERVAL</span> <span class="string">&#x27;60&#x27;</span> <span class="keyword">SECOND</span>) </span><br><span class="line">,hop_end(createTime, <span class="type">INTERVAL</span> <span class="string">&#x27;5&#x27;</span> <span class="keyword">SECOND</span>,<span class="type">INTERVAL</span> <span class="string">&#x27;60&#x27;</span> <span class="keyword">SECOND</span>) </span><br><span class="line"><span class="keyword">from</span> tb_order</span><br><span class="line"> <span class="keyword">group</span> <span class="keyword">by</span> userId,hop(createTime, <span class="type">INTERVAL</span> <span class="string">&#x27;5&#x27;</span> <span class="keyword">SECOND</span>,<span class="type">INTERVAL</span> <span class="string">&#x27;60&#x27;</span> <span class="keyword">SECOND</span>) </span><br></pre></td></tr></table></figure>
+<h3 id="滑动窗口"><a href="#滑动窗口" class="headerlink" title="滑动窗口"></a>滑动窗口</h3><pre class="language-sql" data-language="sql"><code class="language-sql"><span class="token comment">#窗口60s，间隔5s</span>
+<span class="token keyword">select</span> userId
+<span class="token punctuation">,</span> <span class="token function">count</span><span class="token punctuation">(</span><span class="token operator">*</span><span class="token punctuation">)</span> <span class="token keyword">as</span> orderCount
+<span class="token punctuation">,</span> <span class="token function">max</span><span class="token punctuation">(</span>money<span class="token punctuation">)</span> <span class="token keyword">as</span> maxMoney
+<span class="token punctuation">,</span><span class="token function">min</span><span class="token punctuation">(</span>money<span class="token punctuation">)</span> <span class="token keyword">as</span> minMoney
+ <span class="token punctuation">,</span><span class="token function">min</span><span class="token punctuation">(</span>createTime<span class="token punctuation">)</span> 
+<span class="token punctuation">,</span>hop_start<span class="token punctuation">(</span>createTime<span class="token punctuation">,</span> <span class="token keyword">INTERVAL</span> <span class="token string">'5'</span> <span class="token keyword">SECOND</span><span class="token punctuation">,</span><span class="token keyword">INTERVAL</span> <span class="token string">'60'</span> <span class="token keyword">SECOND</span><span class="token punctuation">)</span> 
+<span class="token punctuation">,</span>hop_end<span class="token punctuation">(</span>createTime<span class="token punctuation">,</span> <span class="token keyword">INTERVAL</span> <span class="token string">'5'</span> <span class="token keyword">SECOND</span><span class="token punctuation">,</span><span class="token keyword">INTERVAL</span> <span class="token string">'60'</span> <span class="token keyword">SECOND</span><span class="token punctuation">)</span> 
+<span class="token keyword">from</span> tb_order
+ <span class="token keyword">group</span> <span class="token keyword">by</span> userId<span class="token punctuation">,</span>hop<span class="token punctuation">(</span>createTime<span class="token punctuation">,</span> <span class="token keyword">INTERVAL</span> <span class="token string">'5'</span> <span class="token keyword">SECOND</span><span class="token punctuation">,</span><span class="token keyword">INTERVAL</span> <span class="token string">'60'</span> <span class="token keyword">SECOND</span><span class="token punctuation">)</span> </code></pre>
 
-<h3 id="累计窗口"><a href="#累计窗口" class="headerlink" title="累计窗口"></a>累计窗口</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">#每隔<span class="number">10</span>s统计今天的数据</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> print_sink</span><br><span class="line"><span class="keyword">select</span></span><br><span class="line"> date_format(window_start, <span class="string">&#x27;HH:mm:ss&#x27;</span>)</span><br><span class="line"> , date_format(window_end, <span class="string">&#x27;HH:mm:ss&#x27;</span>)</span><br><span class="line"> , <span class="built_in">count</span>(id)</span><br><span class="line"> , <span class="built_in">count</span>(<span class="keyword">distinct</span> id)</span><br><span class="line">  <span class="keyword">FROM</span> <span class="keyword">TABLE</span>(</span><br><span class="line">    CUMULATE(<span class="keyword">TABLE</span> datagen_source, DESCRIPTOR(proc_time), <span class="type">INTERVAL</span> <span class="string">&#x27;10&#x27;</span> <span class="keyword">SECOND</span>, <span class="type">INTERVAL</span> <span class="string">&#x27;1&#x27;</span> <span class="keyword">DAY</span>))</span><br><span class="line">  <span class="keyword">GROUP</span> <span class="keyword">BY</span> window_start, window_end</span><br></pre></td></tr></table></figure>
+<h3 id="累计窗口"><a href="#累计窗口" class="headerlink" title="累计窗口"></a>累计窗口</h3><pre class="language-sql" data-language="sql"><code class="language-sql"><span class="token comment">#每隔10s统计今天的数据</span>
+<span class="token keyword">insert</span> <span class="token keyword">into</span> print_sink
+<span class="token keyword">select</span>
+ date_format<span class="token punctuation">(</span>window_start<span class="token punctuation">,</span> <span class="token string">'HH:mm:ss'</span><span class="token punctuation">)</span>
+ <span class="token punctuation">,</span> date_format<span class="token punctuation">(</span>window_end<span class="token punctuation">,</span> <span class="token string">'HH:mm:ss'</span><span class="token punctuation">)</span>
+ <span class="token punctuation">,</span> <span class="token function">count</span><span class="token punctuation">(</span>id<span class="token punctuation">)</span>
+ <span class="token punctuation">,</span> <span class="token function">count</span><span class="token punctuation">(</span><span class="token keyword">distinct</span> id<span class="token punctuation">)</span>
+  <span class="token keyword">FROM</span> <span class="token keyword">TABLE</span><span class="token punctuation">(</span>
+    CUMULATE<span class="token punctuation">(</span><span class="token keyword">TABLE</span> datagen_source<span class="token punctuation">,</span> DESCRIPTOR<span class="token punctuation">(</span>proc_time<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token keyword">INTERVAL</span> <span class="token string">'10'</span> <span class="token keyword">SECOND</span><span class="token punctuation">,</span> <span class="token keyword">INTERVAL</span> <span class="token string">'1'</span> <span class="token keyword">DAY</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+  <span class="token keyword">GROUP</span> <span class="token keyword">BY</span> window_start<span class="token punctuation">,</span> window_end</code></pre>
 
-<h2 id="cube函数"><a href="#cube函数" class="headerlink" title="cube函数"></a>cube函数</h2><h3 id="GROUPING-SETS"><a href="#GROUPING-SETS" class="headerlink" title="GROUPING SETS"></a>GROUPING SETS</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">#<span class="keyword">GROUP</span> SETS 中的表达式可以包含 <span class="number">0</span> 个或多个字段，<span class="number">0</span> 个表示所有行聚合到 <span class="number">1</span> 组。</span><br><span class="line"><span class="keyword">SELECT</span> window_start, window_end, supplier_id, <span class="built_in">SUM</span>(price) <span class="keyword">as</span> price</span><br><span class="line">  <span class="keyword">FROM</span> <span class="keyword">TABLE</span>(</span><br><span class="line">    TUMBLE(<span class="keyword">TABLE</span> Bid, DESCRIPTOR(bidtime), <span class="type">INTERVAL</span> <span class="string">&#x27;10&#x27;</span> MINUTES))</span><br><span class="line">  <span class="keyword">GROUP</span> <span class="keyword">BY</span> window_start, window_end, <span class="keyword">GROUPING</span> SETS ((supplier_id), ());</span><br><span class="line"><span class="comment">-- 在 Window 内，按照 supplier_id 分组，和部分组两个规则</span></span><br><span class="line">  </span><br><span class="line"><span class="operator">+</span><span class="comment">------------------+------------------+-------------+-------+</span></span><br><span class="line"><span class="operator">|</span>     window_start <span class="operator">|</span>       window_end <span class="operator">|</span> supplier_id <span class="operator">|</span> price <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">------------------+------------------+-------------+-------+</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-04</span><span class="number">-15</span> <span class="number">08</span>:<span class="number">00</span> <span class="operator">|</span> <span class="number">2020</span><span class="number">-04</span><span class="number">-15</span> <span class="number">08</span>:<span class="number">10</span> <span class="operator">|</span>      (<span class="keyword">NULL</span>) <span class="operator">|</span> <span class="number">11.00</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-04</span><span class="number">-15</span> <span class="number">08</span>:<span class="number">00</span> <span class="operator">|</span> <span class="number">2020</span><span class="number">-04</span><span class="number">-15</span> <span class="number">08</span>:<span class="number">10</span> <span class="operator">|</span>   supplier2 <span class="operator">|</span>  <span class="number">5.00</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-04</span><span class="number">-15</span> <span class="number">08</span>:<span class="number">00</span> <span class="operator">|</span> <span class="number">2020</span><span class="number">-04</span><span class="number">-15</span> <span class="number">08</span>:<span class="number">10</span> <span class="operator">|</span>   supplier1 <span class="operator">|</span>  <span class="number">6.00</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-04</span><span class="number">-15</span> <span class="number">08</span>:<span class="number">10</span> <span class="operator">|</span> <span class="number">2020</span><span class="number">-04</span><span class="number">-15</span> <span class="number">08</span>:<span class="number">20</span> <span class="operator">|</span>      (<span class="keyword">NULL</span>) <span class="operator">|</span> <span class="number">10.00</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-04</span><span class="number">-15</span> <span class="number">08</span>:<span class="number">10</span> <span class="operator">|</span> <span class="number">2020</span><span class="number">-04</span><span class="number">-15</span> <span class="number">08</span>:<span class="number">20</span> <span class="operator">|</span>   supplier2 <span class="operator">|</span>  <span class="number">9.00</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-04</span><span class="number">-15</span> <span class="number">08</span>:<span class="number">10</span> <span class="operator">|</span> <span class="number">2020</span><span class="number">-04</span><span class="number">-15</span> <span class="number">08</span>:<span class="number">20</span> <span class="operator">|</span>   supplier1 <span class="operator">|</span>  <span class="number">1.00</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">------------------+------------------+-------------+-------+</span></span><br></pre></td></tr></table></figure>
+<h2 id="cube函数"><a href="#cube函数" class="headerlink" title="cube函数"></a>cube函数</h2><h3 id="GROUPING-SETS"><a href="#GROUPING-SETS" class="headerlink" title="GROUPING SETS"></a>GROUPING SETS</h3><pre class="language-sql" data-language="sql"><code class="language-sql"><span class="token comment">#GROUP SETS 中的表达式可以包含 0 个或多个字段，0 个表示所有行聚合到 1 组。</span>
+<span class="token keyword">SELECT</span> window_start<span class="token punctuation">,</span> window_end<span class="token punctuation">,</span> supplier_id<span class="token punctuation">,</span> <span class="token function">SUM</span><span class="token punctuation">(</span>price<span class="token punctuation">)</span> <span class="token keyword">as</span> price
+  <span class="token keyword">FROM</span> <span class="token keyword">TABLE</span><span class="token punctuation">(</span>
+    TUMBLE<span class="token punctuation">(</span><span class="token keyword">TABLE</span> Bid<span class="token punctuation">,</span> DESCRIPTOR<span class="token punctuation">(</span>bidtime<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token keyword">INTERVAL</span> <span class="token string">'10'</span> MINUTES<span class="token punctuation">)</span><span class="token punctuation">)</span>
+  <span class="token keyword">GROUP</span> <span class="token keyword">BY</span> window_start<span class="token punctuation">,</span> window_end<span class="token punctuation">,</span> GROUPING SETS <span class="token punctuation">(</span><span class="token punctuation">(</span>supplier_id<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token comment">-- 在 Window 内，按照 supplier_id 分组，和部分组两个规则</span>
+  
+<span class="token operator">+</span><span class="token comment">------------------+------------------+-------------+-------+</span>
+<span class="token operator">|</span>     window_start <span class="token operator">|</span>       window_end <span class="token operator">|</span> supplier_id <span class="token operator">|</span> price <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment">------------------+------------------+-------------+-------+</span>
+<span class="token operator">|</span> <span class="token number">2020</span><span class="token operator">-</span><span class="token number">04</span><span class="token operator">-</span><span class="token number">15</span> <span class="token number">08</span>:<span class="token number">00</span> <span class="token operator">|</span> <span class="token number">2020</span><span class="token operator">-</span><span class="token number">04</span><span class="token operator">-</span><span class="token number">15</span> <span class="token number">08</span>:<span class="token number">10</span> <span class="token operator">|</span>      <span class="token punctuation">(</span><span class="token boolean">NULL</span><span class="token punctuation">)</span> <span class="token operator">|</span> <span class="token number">11.00</span> <span class="token operator">|</span>
+<span class="token operator">|</span> <span class="token number">2020</span><span class="token operator">-</span><span class="token number">04</span><span class="token operator">-</span><span class="token number">15</span> <span class="token number">08</span>:<span class="token number">00</span> <span class="token operator">|</span> <span class="token number">2020</span><span class="token operator">-</span><span class="token number">04</span><span class="token operator">-</span><span class="token number">15</span> <span class="token number">08</span>:<span class="token number">10</span> <span class="token operator">|</span>   supplier2 <span class="token operator">|</span>  <span class="token number">5.00</span> <span class="token operator">|</span>
+<span class="token operator">|</span> <span class="token number">2020</span><span class="token operator">-</span><span class="token number">04</span><span class="token operator">-</span><span class="token number">15</span> <span class="token number">08</span>:<span class="token number">00</span> <span class="token operator">|</span> <span class="token number">2020</span><span class="token operator">-</span><span class="token number">04</span><span class="token operator">-</span><span class="token number">15</span> <span class="token number">08</span>:<span class="token number">10</span> <span class="token operator">|</span>   supplier1 <span class="token operator">|</span>  <span class="token number">6.00</span> <span class="token operator">|</span>
+<span class="token operator">|</span> <span class="token number">2020</span><span class="token operator">-</span><span class="token number">04</span><span class="token operator">-</span><span class="token number">15</span> <span class="token number">08</span>:<span class="token number">10</span> <span class="token operator">|</span> <span class="token number">2020</span><span class="token operator">-</span><span class="token number">04</span><span class="token operator">-</span><span class="token number">15</span> <span class="token number">08</span>:<span class="token number">20</span> <span class="token operator">|</span>      <span class="token punctuation">(</span><span class="token boolean">NULL</span><span class="token punctuation">)</span> <span class="token operator">|</span> <span class="token number">10.00</span> <span class="token operator">|</span>
+<span class="token operator">|</span> <span class="token number">2020</span><span class="token operator">-</span><span class="token number">04</span><span class="token operator">-</span><span class="token number">15</span> <span class="token number">08</span>:<span class="token number">10</span> <span class="token operator">|</span> <span class="token number">2020</span><span class="token operator">-</span><span class="token number">04</span><span class="token operator">-</span><span class="token number">15</span> <span class="token number">08</span>:<span class="token number">20</span> <span class="token operator">|</span>   supplier2 <span class="token operator">|</span>  <span class="token number">9.00</span> <span class="token operator">|</span>
+<span class="token operator">|</span> <span class="token number">2020</span><span class="token operator">-</span><span class="token number">04</span><span class="token operator">-</span><span class="token number">15</span> <span class="token number">08</span>:<span class="token number">10</span> <span class="token operator">|</span> <span class="token number">2020</span><span class="token operator">-</span><span class="token number">04</span><span class="token operator">-</span><span class="token number">15</span> <span class="token number">08</span>:<span class="token number">20</span> <span class="token operator">|</span>   supplier1 <span class="token operator">|</span>  <span class="token number">1.00</span> <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment">------------------+------------------+-------------+-------+</span></code></pre>
 
-<h3 id="ROLLUP"><a href="#ROLLUP" class="headerlink" title="ROLLUP"></a>ROLLUP</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">#<span class="keyword">ROLLUP</span>(a, b) 等同于 <span class="keyword">GROUPING</span> SETS ((a), (a, b), ())</span><br><span class="line"><span class="keyword">SELECT</span> window_start, window_end, supplier_id, <span class="built_in">SUM</span>(price) <span class="keyword">as</span> price</span><br><span class="line"><span class="keyword">FROM</span> <span class="keyword">TABLE</span>(</span><br><span class="line">    TUMBLE(<span class="keyword">TABLE</span> Bid, DESCRIPTOR(bidtime), <span class="type">INTERVAL</span> <span class="string">&#x27;10&#x27;</span> MINUTES))</span><br><span class="line"><span class="keyword">GROUP</span> <span class="keyword">BY</span> window_start, window_end, <span class="keyword">ROLLUP</span> (supplier_id);</span><br></pre></td></tr></table></figure>
+<h3 id="ROLLUP"><a href="#ROLLUP" class="headerlink" title="ROLLUP"></a>ROLLUP</h3><pre class="language-sql" data-language="sql"><code class="language-sql"><span class="token comment">#ROLLUP(a, b) 等同于 GROUPING SETS ((a), (a, b), ())</span>
+<span class="token keyword">SELECT</span> window_start<span class="token punctuation">,</span> window_end<span class="token punctuation">,</span> supplier_id<span class="token punctuation">,</span> <span class="token function">SUM</span><span class="token punctuation">(</span>price<span class="token punctuation">)</span> <span class="token keyword">as</span> price
+<span class="token keyword">FROM</span> <span class="token keyword">TABLE</span><span class="token punctuation">(</span>
+    TUMBLE<span class="token punctuation">(</span><span class="token keyword">TABLE</span> Bid<span class="token punctuation">,</span> DESCRIPTOR<span class="token punctuation">(</span>bidtime<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token keyword">INTERVAL</span> <span class="token string">'10'</span> MINUTES<span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token keyword">GROUP</span> <span class="token keyword">BY</span> window_start<span class="token punctuation">,</span> window_end<span class="token punctuation">,</span> ROLLUP <span class="token punctuation">(</span>supplier_id<span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
 
-<h3 id="CUBE"><a href="#CUBE" class="headerlink" title="CUBE"></a>CUBE</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">#<span class="keyword">CUBE</span>(a, b) 等同于 <span class="keyword">GROUPING</span> SETS ((a), (b), (a, b), ())</span><br><span class="line"><span class="keyword">SELECT</span> window_start, window_end, item, supplier_id, <span class="built_in">SUM</span>(price) <span class="keyword">as</span> price</span><br><span class="line">  <span class="keyword">FROM</span> <span class="keyword">TABLE</span>(</span><br><span class="line">    TUMBLE(<span class="keyword">TABLE</span> Bid, DESCRIPTOR(bidtime), <span class="type">INTERVAL</span> <span class="string">&#x27;10&#x27;</span> MINUTES))</span><br><span class="line">  <span class="keyword">GROUP</span> <span class="keyword">BY</span> window_start, window_end, <span class="keyword">CUBE</span> (supplier_id, item);</span><br></pre></td></tr></table></figure>
+<h3 id="CUBE"><a href="#CUBE" class="headerlink" title="CUBE"></a>CUBE</h3><pre class="language-sql" data-language="sql"><code class="language-sql"><span class="token comment">#CUBE(a, b) 等同于 GROUPING SETS ((a), (b), (a, b), ())</span>
+<span class="token keyword">SELECT</span> window_start<span class="token punctuation">,</span> window_end<span class="token punctuation">,</span> item<span class="token punctuation">,</span> supplier_id<span class="token punctuation">,</span> <span class="token function">SUM</span><span class="token punctuation">(</span>price<span class="token punctuation">)</span> <span class="token keyword">as</span> price
+  <span class="token keyword">FROM</span> <span class="token keyword">TABLE</span><span class="token punctuation">(</span>
+    TUMBLE<span class="token punctuation">(</span><span class="token keyword">TABLE</span> Bid<span class="token punctuation">,</span> DESCRIPTOR<span class="token punctuation">(</span>bidtime<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token keyword">INTERVAL</span> <span class="token string">'10'</span> MINUTES<span class="token punctuation">)</span><span class="token punctuation">)</span>
+  <span class="token keyword">GROUP</span> <span class="token keyword">BY</span> window_start<span class="token punctuation">,</span> window_end<span class="token punctuation">,</span> CUBE <span class="token punctuation">(</span>supplier_id<span class="token punctuation">,</span> item<span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
 
 <h2 id="demo"><a href="#demo" class="headerlink" title="demo"></a>demo</h2><p><a target="_blank" rel="noopener" href="https://xie.infoq.cn/article/c664e0a89afb2110db4f18af9">https://xie.infoq.cn/article/c664e0a89afb2110db4f18af9</a></p>
 <h2 id="Window-Top-N"><a href="#Window-Top-N" class="headerlink" title="Window Top-N"></a>Window Top-N</h2><p>只适用流处理模式</p>
 <p>计算每 10 分钟内销售额最高的前 3 名供应商。</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span></span><br><span class="line">  <span class="keyword">FROM</span> (</span><br><span class="line">    <span class="keyword">SELECT</span> <span class="operator">*</span>, </span><br><span class="line">        <span class="built_in">ROW_NUMBER</span>() <span class="keyword">OVER</span> (<span class="keyword">PARTITION</span> <span class="keyword">BY</span> window_start, window_end </span><br><span class="line">            <span class="keyword">ORDER</span> <span class="keyword">BY</span> price <span class="keyword">DESC</span>) <span class="keyword">as</span> rownum</span><br><span class="line">    <span class="keyword">FROM</span> (</span><br><span class="line">      <span class="keyword">SELECT</span> window_start, window_end, supplier_id, <span class="built_in">SUM</span>(price) <span class="keyword">as</span> price, <span class="built_in">COUNT</span>(<span class="operator">*</span>) <span class="keyword">as</span> cnt</span><br><span class="line">      <span class="keyword">FROM</span> <span class="keyword">TABLE</span>(</span><br><span class="line">        TUMBLE(<span class="keyword">TABLE</span> Bid, DESCRIPTOR(bidtime), <span class="type">INTERVAL</span> <span class="string">&#x27;10&#x27;</span> MINUTES))</span><br><span class="line">      <span class="keyword">GROUP</span> <span class="keyword">BY</span> window_start, window_end, supplier_id</span><br><span class="line">    )</span><br><span class="line">  ) <span class="keyword">WHERE</span> rownum <span class="operator">&lt;=</span> <span class="number">3</span>;</span><br><span class="line">  </span><br><span class="line">  </span><br><span class="line"><span class="operator">+</span><span class="comment">------------------+------------------+-------------+-------+-----+--------+</span></span><br><span class="line"><span class="operator">|</span>     window_start <span class="operator">|</span>       window_end <span class="operator">|</span> supplier_id <span class="operator">|</span> price <span class="operator">|</span> cnt <span class="operator">|</span> rownum <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">------------------+------------------+-------------+-------+-----+--------+</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-04</span><span class="number">-15</span> <span class="number">08</span>:<span class="number">00</span> <span class="operator">|</span> <span class="number">2020</span><span class="number">-04</span><span class="number">-15</span> <span class="number">08</span>:<span class="number">10</span> <span class="operator">|</span>   supplier1 <span class="operator">|</span>  <span class="number">6.00</span> <span class="operator">|</span>   <span class="number">2</span> <span class="operator">|</span>      <span class="number">1</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-04</span><span class="number">-15</span> <span class="number">08</span>:<span class="number">00</span> <span class="operator">|</span> <span class="number">2020</span><span class="number">-04</span><span class="number">-15</span> <span class="number">08</span>:<span class="number">10</span> <span class="operator">|</span>   supplier4 <span class="operator">|</span>  <span class="number">5.00</span> <span class="operator">|</span>   <span class="number">1</span> <span class="operator">|</span>      <span class="number">2</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-04</span><span class="number">-15</span> <span class="number">08</span>:<span class="number">00</span> <span class="operator">|</span> <span class="number">2020</span><span class="number">-04</span><span class="number">-15</span> <span class="number">08</span>:<span class="number">10</span> <span class="operator">|</span>   supplier2 <span class="operator">|</span>  <span class="number">4.00</span> <span class="operator">|</span>   <span class="number">1</span> <span class="operator">|</span>      <span class="number">3</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-04</span><span class="number">-15</span> <span class="number">08</span>:<span class="number">10</span> <span class="operator">|</span> <span class="number">2020</span><span class="number">-04</span><span class="number">-15</span> <span class="number">08</span>:<span class="number">20</span> <span class="operator">|</span>   supplier5 <span class="operator">|</span>  <span class="number">6.00</span> <span class="operator">|</span>   <span class="number">1</span> <span class="operator">|</span>      <span class="number">1</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-04</span><span class="number">-15</span> <span class="number">08</span>:<span class="number">10</span> <span class="operator">|</span> <span class="number">2020</span><span class="number">-04</span><span class="number">-15</span> <span class="number">08</span>:<span class="number">20</span> <span class="operator">|</span>   supplier2 <span class="operator">|</span>  <span class="number">3.00</span> <span class="operator">|</span>   <span class="number">1</span> <span class="operator">|</span>      <span class="number">2</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2020</span><span class="number">-04</span><span class="number">-15</span> <span class="number">08</span>:<span class="number">10</span> <span class="operator">|</span> <span class="number">2020</span><span class="number">-04</span><span class="number">-15</span> <span class="number">08</span>:<span class="number">20</span> <span class="operator">|</span>   supplier3 <span class="operator">|</span>  <span class="number">2.00</span> <span class="operator">|</span>   <span class="number">1</span> <span class="operator">|</span>      <span class="number">3</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">------------------+------------------+-------------+-------+-----+--------+</span></span><br></pre></td></tr></table></figure>
+<pre class="language-sql" data-language="sql"><code class="language-sql"><span class="token keyword">SELECT</span> <span class="token operator">*</span>
+  <span class="token keyword">FROM</span> <span class="token punctuation">(</span>
+    <span class="token keyword">SELECT</span> <span class="token operator">*</span><span class="token punctuation">,</span> 
+        ROW_NUMBER<span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">OVER</span> <span class="token punctuation">(</span><span class="token keyword">PARTITION</span> <span class="token keyword">BY</span> window_start<span class="token punctuation">,</span> window_end 
+            <span class="token keyword">ORDER</span> <span class="token keyword">BY</span> price <span class="token keyword">DESC</span><span class="token punctuation">)</span> <span class="token keyword">as</span> rownum
+    <span class="token keyword">FROM</span> <span class="token punctuation">(</span>
+      <span class="token keyword">SELECT</span> window_start<span class="token punctuation">,</span> window_end<span class="token punctuation">,</span> supplier_id<span class="token punctuation">,</span> <span class="token function">SUM</span><span class="token punctuation">(</span>price<span class="token punctuation">)</span> <span class="token keyword">as</span> price<span class="token punctuation">,</span> <span class="token function">COUNT</span><span class="token punctuation">(</span><span class="token operator">*</span><span class="token punctuation">)</span> <span class="token keyword">as</span> cnt
+      <span class="token keyword">FROM</span> <span class="token keyword">TABLE</span><span class="token punctuation">(</span>
+        TUMBLE<span class="token punctuation">(</span><span class="token keyword">TABLE</span> Bid<span class="token punctuation">,</span> DESCRIPTOR<span class="token punctuation">(</span>bidtime<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token keyword">INTERVAL</span> <span class="token string">'10'</span> MINUTES<span class="token punctuation">)</span><span class="token punctuation">)</span>
+      <span class="token keyword">GROUP</span> <span class="token keyword">BY</span> window_start<span class="token punctuation">,</span> window_end<span class="token punctuation">,</span> supplier_id
+    <span class="token punctuation">)</span>
+  <span class="token punctuation">)</span> <span class="token keyword">WHERE</span> rownum <span class="token operator">&lt;=</span> <span class="token number">3</span><span class="token punctuation">;</span>
+  
+  
+<span class="token operator">+</span><span class="token comment">------------------+------------------+-------------+-------+-----+--------+</span>
+<span class="token operator">|</span>     window_start <span class="token operator">|</span>       window_end <span class="token operator">|</span> supplier_id <span class="token operator">|</span> price <span class="token operator">|</span> cnt <span class="token operator">|</span> rownum <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment">------------------+------------------+-------------+-------+-----+--------+</span>
+<span class="token operator">|</span> <span class="token number">2020</span><span class="token operator">-</span><span class="token number">04</span><span class="token operator">-</span><span class="token number">15</span> <span class="token number">08</span>:<span class="token number">00</span> <span class="token operator">|</span> <span class="token number">2020</span><span class="token operator">-</span><span class="token number">04</span><span class="token operator">-</span><span class="token number">15</span> <span class="token number">08</span>:<span class="token number">10</span> <span class="token operator">|</span>   supplier1 <span class="token operator">|</span>  <span class="token number">6.00</span> <span class="token operator">|</span>   <span class="token number">2</span> <span class="token operator">|</span>      <span class="token number">1</span> <span class="token operator">|</span>
+<span class="token operator">|</span> <span class="token number">2020</span><span class="token operator">-</span><span class="token number">04</span><span class="token operator">-</span><span class="token number">15</span> <span class="token number">08</span>:<span class="token number">00</span> <span class="token operator">|</span> <span class="token number">2020</span><span class="token operator">-</span><span class="token number">04</span><span class="token operator">-</span><span class="token number">15</span> <span class="token number">08</span>:<span class="token number">10</span> <span class="token operator">|</span>   supplier4 <span class="token operator">|</span>  <span class="token number">5.00</span> <span class="token operator">|</span>   <span class="token number">1</span> <span class="token operator">|</span>      <span class="token number">2</span> <span class="token operator">|</span>
+<span class="token operator">|</span> <span class="token number">2020</span><span class="token operator">-</span><span class="token number">04</span><span class="token operator">-</span><span class="token number">15</span> <span class="token number">08</span>:<span class="token number">00</span> <span class="token operator">|</span> <span class="token number">2020</span><span class="token operator">-</span><span class="token number">04</span><span class="token operator">-</span><span class="token number">15</span> <span class="token number">08</span>:<span class="token number">10</span> <span class="token operator">|</span>   supplier2 <span class="token operator">|</span>  <span class="token number">4.00</span> <span class="token operator">|</span>   <span class="token number">1</span> <span class="token operator">|</span>      <span class="token number">3</span> <span class="token operator">|</span>
+<span class="token operator">|</span> <span class="token number">2020</span><span class="token operator">-</span><span class="token number">04</span><span class="token operator">-</span><span class="token number">15</span> <span class="token number">08</span>:<span class="token number">10</span> <span class="token operator">|</span> <span class="token number">2020</span><span class="token operator">-</span><span class="token number">04</span><span class="token operator">-</span><span class="token number">15</span> <span class="token number">08</span>:<span class="token number">20</span> <span class="token operator">|</span>   supplier5 <span class="token operator">|</span>  <span class="token number">6.00</span> <span class="token operator">|</span>   <span class="token number">1</span> <span class="token operator">|</span>      <span class="token number">1</span> <span class="token operator">|</span>
+<span class="token operator">|</span> <span class="token number">2020</span><span class="token operator">-</span><span class="token number">04</span><span class="token operator">-</span><span class="token number">15</span> <span class="token number">08</span>:<span class="token number">10</span> <span class="token operator">|</span> <span class="token number">2020</span><span class="token operator">-</span><span class="token number">04</span><span class="token operator">-</span><span class="token number">15</span> <span class="token number">08</span>:<span class="token number">20</span> <span class="token operator">|</span>   supplier2 <span class="token operator">|</span>  <span class="token number">3.00</span> <span class="token operator">|</span>   <span class="token number">1</span> <span class="token operator">|</span>      <span class="token number">2</span> <span class="token operator">|</span>
+<span class="token operator">|</span> <span class="token number">2020</span><span class="token operator">-</span><span class="token number">04</span><span class="token operator">-</span><span class="token number">15</span> <span class="token number">08</span>:<span class="token number">10</span> <span class="token operator">|</span> <span class="token number">2020</span><span class="token operator">-</span><span class="token number">04</span><span class="token operator">-</span><span class="token number">15</span> <span class="token number">08</span>:<span class="token number">20</span> <span class="token operator">|</span>   supplier3 <span class="token operator">|</span>  <span class="token number">2.00</span> <span class="token operator">|</span>   <span class="token number">1</span> <span class="token operator">|</span>      <span class="token number">3</span> <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment">------------------+------------------+-------------+-------+-----+--------+</span></code></pre>
 
 
 
 
 
-<h2 id="表的参数配置"><a href="#表的参数配置" class="headerlink" title="表的参数配置"></a>表的参数配置</h2><h3 id="jdbc"><a href="#jdbc" class="headerlink" title="jdbc"></a>jdbc</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line">create table dim (</span><br><span class="line">  dim varchar ,</span><br><span class="line">  channel_eight_role_code varchar ,</span><br><span class="line">  channel_source_code varchar,</span><br><span class="line">  CHANNEL_INFO_ID varchar</span><br><span class="line">) with(</span><br><span class="line">  -- 声明连接器类型。flink会通过spi找到连接器，并且进行参数匹配</span><br><span class="line">  &#x27;connector.type&#x27; = &#x27;jdbc&#x27;,</span><br><span class="line">  </span><br><span class="line">  -- jdbc的url</span><br><span class="line">  &#x27;connector.url&#x27; = &#x27;jdbc:mysql://10.25.76.173:3310/ogg_syncer?useUnicode=true&amp;characterEncoding=UTF-8&amp;useSSL=false&#x27;,</span><br><span class="line">  </span><br><span class="line">  -- 表名称</span><br><span class="line">  &#x27;connector.table&#x27; = &#x27;epcis_epcisbase_channel_info&#x27;,</span><br><span class="line">  </span><br><span class="line">  -- 驱动类型</span><br><span class="line">  &#x27;connector.driver&#x27; = &#x27;com.mysql.jdbc.Driver&#x27;,</span><br><span class="line">  </span><br><span class="line">  -- 用过名和密码</span><br><span class="line">  &#x27;connector.username&#x27; = &#x27;root&#x27;,</span><br><span class="line">  &#x27;connector.password&#x27; = &#x27;root&#x27;,</span><br><span class="line"></span><br><span class="line">  -- jdbc作为维表的时候，缓存时间。cache默认未开启。</span><br><span class="line">  &#x27;connector.lookup.cache.ttl&#x27; = &#x27;60s&#x27;,</span><br><span class="line">  </span><br><span class="line">  --  jdbc作为维表的时候，缓存的最大行数。cache默认未开启。</span><br><span class="line">  &#x27;connector.lookup.cache.max-rows&#x27; = &#x27;100000&#x27;,</span><br><span class="line">  </span><br><span class="line">  -- jdbc作为维表的时候，如果查询失败，最大查询次数</span><br><span class="line">  &#x27;connector.lookup.max-retries&#x27; = &#x27;3&#x27;,</span><br><span class="line">  </span><br><span class="line">  -- jdbc写入缓存的最大行数。默认值5000</span><br><span class="line">  &#x27;connector.write.flush.max-rows&#x27; = &#x27;5000&#x27;,</span><br><span class="line">  </span><br><span class="line">  -- jdbc 写入缓存flush时间间隔。默认为0，立即写入</span><br><span class="line">  &#x27;connector.write.flush.interval&#x27; = &#x27;2s&#x27;,</span><br><span class="line">  </span><br><span class="line">  -- 写入失败，最大重试次数</span><br><span class="line">  &#x27;connector.write.max-retries&#x27; = &#x27;3&#x27; </span><br><span class="line">);</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h2 id="表的参数配置"><a href="#表的参数配置" class="headerlink" title="表的参数配置"></a>表的参数配置</h2><h3 id="jdbc"><a href="#jdbc" class="headerlink" title="jdbc"></a>jdbc</h3><pre class="language-shell" data-language="shell"><code class="language-shell">create table dim (
+  dim varchar ,
+  channel_eight_role_code varchar ,
+  channel_source_code varchar,
+  CHANNEL_INFO_ID varchar
+) with(
+  -- 声明连接器类型。flink会通过spi找到连接器，并且进行参数匹配
+  &#39;connector.type&#39; &#x3D; &#39;jdbc&#39;,
+  
+  -- jdbc的url
+  &#39;connector.url&#39; &#x3D; &#39;jdbc:mysql:&#x2F;&#x2F;10.25.76.173:3310&#x2F;ogg_syncer?useUnicode&#x3D;true&amp;characterEncoding&#x3D;UTF-8&amp;useSSL&#x3D;false&#39;,
+  
+  -- 表名称
+  &#39;connector.table&#39; &#x3D; &#39;epcis_epcisbase_channel_info&#39;,
+  
+  -- 驱动类型
+  &#39;connector.driver&#39; &#x3D; &#39;com.mysql.jdbc.Driver&#39;,
+  
+  -- 用过名和密码
+  &#39;connector.username&#39; &#x3D; &#39;root&#39;,
+  &#39;connector.password&#39; &#x3D; &#39;root&#39;,
 
-<h1 id="flinkCDC进行数据迁移"><a href="#flinkCDC进行数据迁移" class="headerlink" title="flinkCDC进行数据迁移"></a>flinkCDC进行数据迁移</h1><h3 id="增量读取事实表，关联维度表，间隔-批次写入ck中，完成数据的迁移"><a href="#增量读取事实表，关联维度表，间隔-批次写入ck中，完成数据的迁移" class="headerlink" title="增量读取事实表，关联维度表，间隔+批次写入ck中，完成数据的迁移"></a>增量读取事实表，关联维度表，间隔+批次写入ck中，完成数据的迁移</h3><h4 id="sql实现数据的读取"><a href="#sql实现数据的读取" class="headerlink" title="sql实现数据的读取"></a>sql实现数据的读取</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> cdc;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> com.alibaba.fastjson.JSON;</span><br><span class="line"><span class="keyword">import</span> com.alibaba.fastjson.JSONObject;</span><br><span class="line"><span class="keyword">import</span> com.alibaba.ververica.cdc.connectors.mysql.MySQLSource;</span><br><span class="line"><span class="keyword">import</span> lombok.AllArgsConstructor;</span><br><span class="line"><span class="keyword">import</span> lombok.Data;</span><br><span class="line"><span class="keyword">import</span> lombok.NoArgsConstructor;</span><br><span class="line"><span class="keyword">import</span> org.apache.flink.api.common.functions.MapFunction;</span><br><span class="line"><span class="keyword">import</span> org.apache.flink.streaming.api.datastream.DataStream;</span><br><span class="line"><span class="keyword">import</span> org.apache.flink.streaming.api.datastream.DataStreamSource;</span><br><span class="line"><span class="keyword">import</span> org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;</span><br><span class="line"><span class="keyword">import</span> org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;</span><br><span class="line"><span class="keyword">import</span> org.apache.flink.streaming.api.functions.source.SourceFunction;</span><br><span class="line"><span class="keyword">import</span> org.apache.flink.table.api.Table;</span><br><span class="line"><span class="keyword">import</span> org.apache.flink.table.api.TableResult;</span><br><span class="line"><span class="keyword">import</span> org.apache.flink.table.api.bridge.java.StreamTableEnvironment;</span><br><span class="line"><span class="keyword">import</span> org.apache.flink.types.Row;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.util.Date;</span><br><span class="line"><span class="keyword">import</span> java.util.Properties;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@author</span> nove</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@version</span> 1.0</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@date</span> 2021/12/10 16:55</span></span><br><span class="line"><span class="comment"> * cdc迁移数据</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">DateTrans</span> </span>&#123;</span><br><span class="line">    <span class="meta">@Data</span></span><br><span class="line">    <span class="meta">@AllArgsConstructor</span></span><br><span class="line">    <span class="meta">@NoArgsConstructor</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">Student</span></span>&#123;</span><br><span class="line">        <span class="keyword">private</span> Integer id;</span><br><span class="line">        <span class="keyword">private</span> String name;</span><br><span class="line">        <span class="keyword">private</span> Integer age;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Data</span></span><br><span class="line">    <span class="meta">@AllArgsConstructor</span></span><br><span class="line">    <span class="meta">@NoArgsConstructor</span></span><br><span class="line">    <span class="keyword">public</span>  <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">OrderTb</span>   </span>&#123;</span><br><span class="line">        <span class="keyword">private</span> Integer id;</span><br><span class="line">        <span class="keyword">private</span> String serialNo;</span><br><span class="line">        <span class="keyword">private</span> Integer price;</span><br><span class="line">        <span class="keyword">private</span> Date time;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        Properties properties = <span class="keyword">new</span> Properties();</span><br><span class="line">        properties.put(<span class="string">&quot;snapshot.mode&quot;</span>,<span class="string">&quot;schema_only&quot;</span>);<span class="comment">//debezium增量获取方式配置</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">//事实表的增量获取</span></span><br><span class="line">        SourceFunction&lt;JSONObject&gt; factTb = MySQLSource.&lt;JSONObject&gt;builder()</span><br><span class="line">                .hostname(<span class="string">&quot;47.108.204.135&quot;</span>)</span><br><span class="line">                .port(<span class="number">3310</span>)</span><br><span class="line">                .databaseList(<span class="string">&quot;company&quot;</span>) <span class="comment">// monitor all tables under inventory database</span></span><br><span class="line">                .tableList(<span class="string">&quot;company.order_tb&quot;</span>)<span class="comment">//库名+表名字，逗号分隔</span></span><br><span class="line">                .username(<span class="string">&quot;root&quot;</span>)</span><br><span class="line">                .password(<span class="string">&quot;hDtoLDuI&quot;</span>)</span><br><span class="line">                .debeziumProperties(properties)</span><br><span class="line">                .deserializer(<span class="keyword">new</span> CdcDwdDeserializationSchema()) <span class="comment">// converts SourceRecord to String</span></span><br><span class="line">                .build();</span><br><span class="line"></span><br><span class="line">        <span class="comment">//维度表的获取</span></span><br><span class="line">        SourceFunction&lt;JSONObject&gt; dimTb = MySQLSource.&lt;JSONObject&gt;builder()</span><br><span class="line">                .hostname(<span class="string">&quot;47.108.204.135&quot;</span>)</span><br><span class="line">                .port(<span class="number">3310</span>)</span><br><span class="line">                .databaseList(<span class="string">&quot;company&quot;</span>) <span class="comment">// monitor all tables under inventory database</span></span><br><span class="line">                .tableList(<span class="string">&quot;company.student&quot;</span>)<span class="comment">//库名+表名字，逗号分隔</span></span><br><span class="line">                .username(<span class="string">&quot;root&quot;</span>)</span><br><span class="line">                .password(<span class="string">&quot;hDtoLDuI&quot;</span>)</span><br><span class="line">                .deserializer(<span class="keyword">new</span> CdcDwdDeserializationSchema()) <span class="comment">// converts SourceRecord to String</span></span><br><span class="line">                .build();</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();</span><br><span class="line">        StreamTableEnvironment tableEnv = StreamTableEnvironment.create(env);</span><br><span class="line"></span><br><span class="line">        DataStreamSource&lt;JSONObject&gt; factSource = env.addSource(factTb);</span><br><span class="line">        DataStreamSource&lt;JSONObject&gt; dimSource = env.addSource(dimTb);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">        SingleOutputStreamOperator&lt;OrderTb&gt; factTbDs = factSource.map(<span class="keyword">new</span> MapFunction&lt;JSONObject, OrderTb&gt;() &#123;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="function"><span class="keyword">public</span> OrderTb <span class="title">map</span><span class="params">(JSONObject value)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">                <span class="keyword">return</span> JSON.parseObject(value.toString(), OrderTb.class);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br><span class="line">        SingleOutputStreamOperator&lt;Student&gt; dimTbDs = dimSource.map(<span class="keyword">new</span> MapFunction&lt;JSONObject, Student&gt;() &#123;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="function"><span class="keyword">public</span> Student <span class="title">map</span><span class="params">(JSONObject value)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">                <span class="keyword">return</span> JSON.parseObject(value.toString(), Student.class);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">        tableEnv.createTemporaryView(<span class="string">&quot;fact&quot;</span>,factTbDs);</span><br><span class="line">        tableEnv.createTemporaryView(<span class="string">&quot;dim&quot;</span>,dimTbDs);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">        Table table = tableEnv.sqlQuery(<span class="string">&quot;select * from fact a join dim b on a.id = b.id&quot;</span>);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">        table.execute().print();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+  -- jdbc作为维表的时候，缓存时间。cache默认未开启。
+  &#39;connector.lookup.cache.ttl&#39; &#x3D; &#39;60s&#39;,
+  
+  --  jdbc作为维表的时候，缓存的最大行数。cache默认未开启。
+  &#39;connector.lookup.cache.max-rows&#39; &#x3D; &#39;100000&#39;,
+  
+  -- jdbc作为维表的时候，如果查询失败，最大查询次数
+  &#39;connector.lookup.max-retries&#39; &#x3D; &#39;3&#39;,
+  
+  -- jdbc写入缓存的最大行数。默认值5000
+  &#39;connector.write.flush.max-rows&#39; &#x3D; &#39;5000&#39;,
+  
+  -- jdbc 写入缓存flush时间间隔。默认为0，立即写入
+  &#39;connector.write.flush.interval&#39; &#x3D; &#39;2s&#39;,
+  
+  -- 写入失败，最大重试次数
+  &#39;connector.write.max-retries&#39; &#x3D; &#39;3&#39; 
+);
+</code></pre>
+
+<h1 id="flinkCDC进行数据迁移"><a href="#flinkCDC进行数据迁移" class="headerlink" title="flinkCDC进行数据迁移"></a>flinkCDC进行数据迁移</h1><h3 id="增量读取事实表，关联维度表，间隔-批次写入ck中，完成数据的迁移"><a href="#增量读取事实表，关联维度表，间隔-批次写入ck中，完成数据的迁移" class="headerlink" title="增量读取事实表，关联维度表，间隔+批次写入ck中，完成数据的迁移"></a>增量读取事实表，关联维度表，间隔+批次写入ck中，完成数据的迁移</h3><h4 id="sql实现数据的读取"><a href="#sql实现数据的读取" class="headerlink" title="sql实现数据的读取"></a>sql实现数据的读取</h4><pre class="language-java" data-language="java"><code class="language-java"><span class="token keyword">package</span> <span class="token namespace">cdc</span><span class="token punctuation">;</span>
+
+<span class="token keyword">import</span> <span class="token namespace">com<span class="token punctuation">.</span>alibaba<span class="token punctuation">.</span>fastjson<span class="token punctuation">.</span></span>JSON<span class="token punctuation">;</span>
+<span class="token keyword">import</span> <span class="token namespace">com<span class="token punctuation">.</span>alibaba<span class="token punctuation">.</span>fastjson<span class="token punctuation">.</span></span><span class="token class-name">JSONObject</span><span class="token punctuation">;</span>
+<span class="token keyword">import</span> <span class="token namespace">com<span class="token punctuation">.</span>alibaba<span class="token punctuation">.</span>ververica<span class="token punctuation">.</span>cdc<span class="token punctuation">.</span>connectors<span class="token punctuation">.</span>mysql<span class="token punctuation">.</span></span><span class="token class-name">MySQLSource</span><span class="token punctuation">;</span>
+<span class="token keyword">import</span> <span class="token namespace">lombok<span class="token punctuation">.</span></span><span class="token class-name">AllArgsConstructor</span><span class="token punctuation">;</span>
+<span class="token keyword">import</span> <span class="token namespace">lombok<span class="token punctuation">.</span></span><span class="token class-name">Data</span><span class="token punctuation">;</span>
+<span class="token keyword">import</span> <span class="token namespace">lombok<span class="token punctuation">.</span></span><span class="token class-name">NoArgsConstructor</span><span class="token punctuation">;</span>
+<span class="token keyword">import</span> <span class="token namespace">org<span class="token punctuation">.</span>apache<span class="token punctuation">.</span>flink<span class="token punctuation">.</span>api<span class="token punctuation">.</span>common<span class="token punctuation">.</span>functions<span class="token punctuation">.</span></span><span class="token class-name">MapFunction</span><span class="token punctuation">;</span>
+<span class="token keyword">import</span> <span class="token namespace">org<span class="token punctuation">.</span>apache<span class="token punctuation">.</span>flink<span class="token punctuation">.</span>streaming<span class="token punctuation">.</span>api<span class="token punctuation">.</span>datastream<span class="token punctuation">.</span></span><span class="token class-name">DataStream</span><span class="token punctuation">;</span>
+<span class="token keyword">import</span> <span class="token namespace">org<span class="token punctuation">.</span>apache<span class="token punctuation">.</span>flink<span class="token punctuation">.</span>streaming<span class="token punctuation">.</span>api<span class="token punctuation">.</span>datastream<span class="token punctuation">.</span></span><span class="token class-name">DataStreamSource</span><span class="token punctuation">;</span>
+<span class="token keyword">import</span> <span class="token namespace">org<span class="token punctuation">.</span>apache<span class="token punctuation">.</span>flink<span class="token punctuation">.</span>streaming<span class="token punctuation">.</span>api<span class="token punctuation">.</span>datastream<span class="token punctuation">.</span></span><span class="token class-name">SingleOutputStreamOperator</span><span class="token punctuation">;</span>
+<span class="token keyword">import</span> <span class="token namespace">org<span class="token punctuation">.</span>apache<span class="token punctuation">.</span>flink<span class="token punctuation">.</span>streaming<span class="token punctuation">.</span>api<span class="token punctuation">.</span>environment<span class="token punctuation">.</span></span><span class="token class-name">StreamExecutionEnvironment</span><span class="token punctuation">;</span>
+<span class="token keyword">import</span> <span class="token namespace">org<span class="token punctuation">.</span>apache<span class="token punctuation">.</span>flink<span class="token punctuation">.</span>streaming<span class="token punctuation">.</span>api<span class="token punctuation">.</span>functions<span class="token punctuation">.</span>source<span class="token punctuation">.</span></span><span class="token class-name">SourceFunction</span><span class="token punctuation">;</span>
+<span class="token keyword">import</span> <span class="token namespace">org<span class="token punctuation">.</span>apache<span class="token punctuation">.</span>flink<span class="token punctuation">.</span>table<span class="token punctuation">.</span>api<span class="token punctuation">.</span></span><span class="token class-name">Table</span><span class="token punctuation">;</span>
+<span class="token keyword">import</span> <span class="token namespace">org<span class="token punctuation">.</span>apache<span class="token punctuation">.</span>flink<span class="token punctuation">.</span>table<span class="token punctuation">.</span>api<span class="token punctuation">.</span></span><span class="token class-name">TableResult</span><span class="token punctuation">;</span>
+<span class="token keyword">import</span> <span class="token namespace">org<span class="token punctuation">.</span>apache<span class="token punctuation">.</span>flink<span class="token punctuation">.</span>table<span class="token punctuation">.</span>api<span class="token punctuation">.</span>bridge<span class="token punctuation">.</span>java<span class="token punctuation">.</span></span><span class="token class-name">StreamTableEnvironment</span><span class="token punctuation">;</span>
+<span class="token keyword">import</span> <span class="token namespace">org<span class="token punctuation">.</span>apache<span class="token punctuation">.</span>flink<span class="token punctuation">.</span>types<span class="token punctuation">.</span></span><span class="token class-name">Row</span><span class="token punctuation">;</span>
+
+<span class="token keyword">import</span> <span class="token namespace">java<span class="token punctuation">.</span>util<span class="token punctuation">.</span></span><span class="token class-name">Date</span><span class="token punctuation">;</span>
+<span class="token keyword">import</span> <span class="token namespace">java<span class="token punctuation">.</span>util<span class="token punctuation">.</span></span><span class="token class-name">Properties</span><span class="token punctuation">;</span>
+
+<span class="token comment">/**
+ * @author nove
+ * @version 1.0
+ * @date 2021/12/10 16:55
+ * cdc迁移数据
+ */</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">DateTrans</span> <span class="token punctuation">&#123;</span>
+    <span class="token annotation punctuation">@Data</span>
+    <span class="token annotation punctuation">@AllArgsConstructor</span>
+    <span class="token annotation punctuation">@NoArgsConstructor</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">class</span> <span class="token class-name">Student</span><span class="token punctuation">&#123;</span>
+        <span class="token keyword">private</span> <span class="token class-name">Integer</span> id<span class="token punctuation">;</span>
+        <span class="token keyword">private</span> <span class="token class-name">String</span> name<span class="token punctuation">;</span>
+        <span class="token keyword">private</span> <span class="token class-name">Integer</span> age<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token annotation punctuation">@Data</span>
+    <span class="token annotation punctuation">@AllArgsConstructor</span>
+    <span class="token annotation punctuation">@NoArgsConstructor</span>
+    <span class="token keyword">public</span>  <span class="token keyword">static</span> <span class="token keyword">class</span> <span class="token class-name">OrderTb</span>   <span class="token punctuation">&#123;</span>
+        <span class="token keyword">private</span> <span class="token class-name">Integer</span> id<span class="token punctuation">;</span>
+        <span class="token keyword">private</span> <span class="token class-name">String</span> serialNo<span class="token punctuation">;</span>
+        <span class="token keyword">private</span> <span class="token class-name">Integer</span> price<span class="token punctuation">;</span>
+        <span class="token keyword">private</span> <span class="token class-name">Date</span> time<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token class-name">String</span><span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token class-name">Properties</span> properties <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Properties</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        properties<span class="token punctuation">.</span><span class="token function">put</span><span class="token punctuation">(</span><span class="token string">"snapshot.mode"</span><span class="token punctuation">,</span><span class="token string">"schema_only"</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span class="token comment">//debezium增量获取方式配置</span>
+
+        <span class="token comment">//事实表的增量获取</span>
+        <span class="token class-name">SourceFunction</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">JSONObject</span><span class="token punctuation">></span></span> factTb <span class="token operator">=</span> <span class="token class-name">MySQLSource</span><span class="token punctuation">.</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">JSONObject</span><span class="token punctuation">></span></span><span class="token function">builder</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">hostname</span><span class="token punctuation">(</span><span class="token string">"47.108.204.135"</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">port</span><span class="token punctuation">(</span><span class="token number">3310</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">databaseList</span><span class="token punctuation">(</span><span class="token string">"company"</span><span class="token punctuation">)</span> <span class="token comment">// monitor all tables under inventory database</span>
+                <span class="token punctuation">.</span><span class="token function">tableList</span><span class="token punctuation">(</span><span class="token string">"company.order_tb"</span><span class="token punctuation">)</span><span class="token comment">//库名+表名字，逗号分隔</span>
+                <span class="token punctuation">.</span><span class="token function">username</span><span class="token punctuation">(</span><span class="token string">"root"</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">password</span><span class="token punctuation">(</span><span class="token string">"hDtoLDuI"</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">debeziumProperties</span><span class="token punctuation">(</span>properties<span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">deserializer</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">CdcDwdDeserializationSchema</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token comment">// converts SourceRecord to String</span>
+                <span class="token punctuation">.</span><span class="token function">build</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token comment">//维度表的获取</span>
+        <span class="token class-name">SourceFunction</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">JSONObject</span><span class="token punctuation">></span></span> dimTb <span class="token operator">=</span> <span class="token class-name">MySQLSource</span><span class="token punctuation">.</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">JSONObject</span><span class="token punctuation">></span></span><span class="token function">builder</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">hostname</span><span class="token punctuation">(</span><span class="token string">"47.108.204.135"</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">port</span><span class="token punctuation">(</span><span class="token number">3310</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">databaseList</span><span class="token punctuation">(</span><span class="token string">"company"</span><span class="token punctuation">)</span> <span class="token comment">// monitor all tables under inventory database</span>
+                <span class="token punctuation">.</span><span class="token function">tableList</span><span class="token punctuation">(</span><span class="token string">"company.student"</span><span class="token punctuation">)</span><span class="token comment">//库名+表名字，逗号分隔</span>
+                <span class="token punctuation">.</span><span class="token function">username</span><span class="token punctuation">(</span><span class="token string">"root"</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">password</span><span class="token punctuation">(</span><span class="token string">"hDtoLDuI"</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">deserializer</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">CdcDwdDeserializationSchema</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token comment">// converts SourceRecord to String</span>
+                <span class="token punctuation">.</span><span class="token function">build</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+
+        <span class="token class-name">StreamExecutionEnvironment</span> env <span class="token operator">=</span> <span class="token class-name">StreamExecutionEnvironment</span><span class="token punctuation">.</span><span class="token function">getExecutionEnvironment</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token class-name">StreamTableEnvironment</span> tableEnv <span class="token operator">=</span> <span class="token class-name">StreamTableEnvironment</span><span class="token punctuation">.</span><span class="token function">create</span><span class="token punctuation">(</span>env<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token class-name">DataStreamSource</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">JSONObject</span><span class="token punctuation">></span></span> factSource <span class="token operator">=</span> env<span class="token punctuation">.</span><span class="token function">addSource</span><span class="token punctuation">(</span>factTb<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token class-name">DataStreamSource</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">JSONObject</span><span class="token punctuation">></span></span> dimSource <span class="token operator">=</span> env<span class="token punctuation">.</span><span class="token function">addSource</span><span class="token punctuation">(</span>dimTb<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+
+        <span class="token class-name">SingleOutputStreamOperator</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">OrderTb</span><span class="token punctuation">></span></span> factTbDs <span class="token operator">=</span> factSource<span class="token punctuation">.</span><span class="token function">map</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">MapFunction</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">JSONObject</span><span class="token punctuation">,</span> <span class="token class-name">OrderTb</span><span class="token punctuation">></span></span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token annotation punctuation">@Override</span>
+            <span class="token keyword">public</span> <span class="token class-name">OrderTb</span> <span class="token function">map</span><span class="token punctuation">(</span><span class="token class-name">JSONObject</span> value<span class="token punctuation">)</span> <span class="token keyword">throws</span> <span class="token class-name">Exception</span> <span class="token punctuation">&#123;</span>
+                <span class="token keyword">return</span> JSON<span class="token punctuation">.</span><span class="token function">parseObject</span><span class="token punctuation">(</span>value<span class="token punctuation">.</span><span class="token function">toString</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token class-name">OrderTb</span><span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span>
+        <span class="token punctuation">&#125;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token class-name">SingleOutputStreamOperator</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">Student</span><span class="token punctuation">></span></span> dimTbDs <span class="token operator">=</span> dimSource<span class="token punctuation">.</span><span class="token function">map</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">MapFunction</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">JSONObject</span><span class="token punctuation">,</span> <span class="token class-name">Student</span><span class="token punctuation">></span></span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token annotation punctuation">@Override</span>
+            <span class="token keyword">public</span> <span class="token class-name">Student</span> <span class="token function">map</span><span class="token punctuation">(</span><span class="token class-name">JSONObject</span> value<span class="token punctuation">)</span> <span class="token keyword">throws</span> <span class="token class-name">Exception</span> <span class="token punctuation">&#123;</span>
+                <span class="token keyword">return</span> JSON<span class="token punctuation">.</span><span class="token function">parseObject</span><span class="token punctuation">(</span>value<span class="token punctuation">.</span><span class="token function">toString</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token class-name">Student</span><span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span>
+        <span class="token punctuation">&#125;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+
+        tableEnv<span class="token punctuation">.</span><span class="token function">createTemporaryView</span><span class="token punctuation">(</span><span class="token string">"fact"</span><span class="token punctuation">,</span>factTbDs<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        tableEnv<span class="token punctuation">.</span><span class="token function">createTemporaryView</span><span class="token punctuation">(</span><span class="token string">"dim"</span><span class="token punctuation">,</span>dimTbDs<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+
+        <span class="token class-name">Table</span> table <span class="token operator">=</span> tableEnv<span class="token punctuation">.</span><span class="token function">sqlQuery</span><span class="token punctuation">(</span><span class="token string">"select * from fact a join dim b on a.id = b.id"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+
+        table<span class="token punctuation">.</span><span class="token function">execute</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">print</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span>
+
+</code></pre>
 
 
                 
@@ -731,6 +1051,8 @@ Stateme">
 
     
 
+    
+
 <article id="prenext-posts" class="prev-next articles">
     <div class="row article-row">
         
@@ -738,7 +1060,7 @@ Stateme">
             <div class="article-badge left-badge text-color">
                 <i class="fas fa-chevron-left"></i>&nbsp;Previous</div>
             <div class="card">
-                <a href="/2021/12/10/hello-world/">
+                <a href="/2021/12/30/hello-world/">
                     <div class="card-image">
                         
                         
@@ -755,7 +1077,7 @@ Stateme">
                     </div>
                     <div class="publish-info">
                         <span class="publish-date">
-                            <i class="far fa-clock fa-fw icon-date"></i>2021-12-10
+                            <i class="far fa-clock fa-fw icon-date"></i>2021-12-30
                         </span>
                         <span class="publish-author">
                             
@@ -798,8 +1120,8 @@ Stateme">
                             
                             <i class="fas fa-bookmark fa-fw icon-category"></i>
                             
-                            <a href="/categories/Markdown/" class="post-category">
-                                    Markdown
+                            <a href="/categories/%E5%A4%A7%E6%95%B0%E6%8D%AE/" class="post-category">
+                                    大数据
                                 </a>
                             
                             
@@ -847,6 +1169,100 @@ Stateme">
 
 <script type="text/javascript" src="/libs/codeBlock/codeShrink.js"></script>
 
+
+    </div>
+    <div id="toc-aside" class="expanded col l3 hide-on-med-and-down">
+        <div class="toc-widget card" style="background-color: white;">
+            <div class="toc-title"><i class="far fa-list-alt"></i>&nbsp;&nbsp;TOC</div>
+            <div id="toc-content"></div>
+        </div>
+    </div>
+</div>
+
+<!-- TOC 悬浮按钮. -->
+
+<div id="floating-toc-btn" class="hide-on-med-and-down">
+    <a class="btn-floating btn-large bg-color">
+        <i class="fas fa-list-ul"></i>
+    </a>
+</div>
+
+
+<script src="/libs/tocbot/tocbot.min.js"></script>
+<script>
+    $(function () {
+        tocbot.init({
+            tocSelector: '#toc-content',
+            contentSelector: '#articleContent',
+            headingsOffset: -($(window).height() * 0.4 - 45),
+            collapseDepth: Number('0'),
+            headingSelector: 'h2, h3, h4'
+        });
+
+        // modify the toc link href to support Chinese.
+        let i = 0;
+        let tocHeading = 'toc-heading-';
+        $('#toc-content a').each(function () {
+            $(this).attr('href', '#' + tocHeading + (++i));
+        });
+
+        // modify the heading title id to support Chinese.
+        i = 0;
+        $('#articleContent').children('h2, h3, h4').each(function () {
+            $(this).attr('id', tocHeading + (++i));
+        });
+
+        // Set scroll toc fixed.
+        let tocHeight = parseInt($(window).height() * 0.4 - 64);
+        let $tocWidget = $('.toc-widget');
+        $(window).scroll(function () {
+            let scroll = $(window).scrollTop();
+            /* add post toc fixed. */
+            if (scroll > tocHeight) {
+                $tocWidget.addClass('toc-fixed');
+            } else {
+                $tocWidget.removeClass('toc-fixed');
+            }
+        });
+
+        
+        /* 修复文章卡片 div 的宽度. */
+        let fixPostCardWidth = function (srcId, targetId) {
+            let srcDiv = $('#' + srcId);
+            if (srcDiv.length === 0) {
+                return;
+            }
+
+            let w = srcDiv.width();
+            if (w >= 450) {
+                w = w + 21;
+            } else if (w >= 350 && w < 450) {
+                w = w + 18;
+            } else if (w >= 300 && w < 350) {
+                w = w + 16;
+            } else {
+                w = w + 14;
+            }
+            $('#' + targetId).width(w);
+        };
+
+        // 切换TOC目录展开收缩的相关操作.
+        const expandedClass = 'expanded';
+        let $tocAside = $('#toc-aside');
+        let $mainContent = $('#main-content');
+        $('#floating-toc-btn .btn-floating').click(function () {
+            if ($tocAside.hasClass(expandedClass)) {
+                $tocAside.removeClass(expandedClass).hide();
+                $mainContent.removeClass('l9');
+            } else {
+                $tocAside.addClass(expandedClass).show();
+                $mainContent.addClass('l9');
+            }
+            fixPostCardWidth('artDetail', 'prenext-posts');
+        });
+        
+    });
+</script>
 
     
 
