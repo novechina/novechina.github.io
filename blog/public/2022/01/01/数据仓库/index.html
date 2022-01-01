@@ -4,22 +4,22 @@
 
 <head>
     <meta charset="utf-8">
-    <meta name="keywords" content="hexo博客编辑, Hexo">
-    <meta name="description" content="
-
-绑定git
-
-绑定本地密匙到git
-
-初始化一个仓库，Settings-&amp;gt;Pages-&amp;gt;Source：branch设置为master，用来发布页面
-
-main分支用来存放文件用作后续编辑
+    <meta name="keywords" content="flink的CDC技术, Hexo">
+    <meta name="description" content="数据仓库概念
+什么是数据仓库
+存放数据的对象：特点：
+面像主题：不同场景有不同的主题域
+集成的：多个源头，做归一化处理
+随时间变化的：时间内有效的局限性
+非易失的：可以稳定保存
 
 
+主题
+可以通过某个关键字关联起来的一系列表
 
-安装node.js
 
-官网下载">
+粒度
+最小">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta name="renderer" content="webkit|ie-stand|ie-comp">
@@ -31,7 +31,7 @@ main分支用来存放文件用作后续编辑
     <!-- Global site tag (gtag.js) - Google Analytics -->
 
 
-    <title>hexo博客编辑 | Hexo</title>
+    <title>flink的CDC技术 | Hexo</title>
     <link rel="icon" type="image/png" href="/favicon.png">
 
     <link rel="stylesheet" type="text/css" href="/libs/awesome/css/all.min.css">
@@ -323,12 +323,12 @@ main分支用来存放文件用作后续编辑
 
 
 
-<div class="bg-cover pd-header post-cover" style="background-image: url('/medias/featureimages/23.jpg')">
+<div class="bg-cover pd-header post-cover" style="background-image: url('/medias/featureimages/13.jpg')">
     <div class="container" style="right: 0px;left: 0px;">
         <div class="row">
             <div class="col s12 m12 l12">
                 <div class="brand">
-                    <h1 class="description center-align post-title">hexo博客编辑</h1>
+                    <h1 class="description center-align post-title">flink的CDC技术</h1>
                 </div>
             </div>
         </div>
@@ -444,8 +444,12 @@ main分支用来存放文件用作后续编辑
                     
                     <div class="article-tag">
                         
-                            <a href="/tags/%E5%8D%9A%E5%AE%A2/">
-                                <span class="chip bg-color">博客</span>
+                            <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/">
+                                <span class="chip bg-color">数据仓库</span>
+                            </a>
+                        
+                            <a href="/tags/%E7%BB%B4%E5%BA%A6%E5%BB%BA%E6%A8%A1/">
+                                <span class="chip bg-color">维度建模</span>
                             </a>
                         
                     </div>
@@ -456,8 +460,8 @@ main分支用来存放文件用作后续编辑
                     <div class="post-cate">
                         <i class="fas fa-bookmark fa-fw icon-category"></i>
                         
-                            <a href="/categories/%E5%85%B4%E8%B6%A3/" class="post-category">
-                                兴趣
+                            <a href="/categories/%E5%A4%A7%E6%95%B0%E6%8D%AE/" class="post-category">
+                                大数据
                             </a>
                         
                     </div>
@@ -469,7 +473,7 @@ main分支用来存放文件用作后续编辑
                 
                 <div class="post-date info-break-policy">
                     <i class="far fa-calendar-minus fa-fw"></i>Publish Date:&nbsp;&nbsp;
-                    2021-12-30
+                    2022-01-01
                 </div>
                 
 
@@ -493,41 +497,136 @@ main分支用来存放文件用作后续编辑
 
         <div class="card-content article-card-content">
             <div id="articleContent">
-                <ul>
-<li><ul>
-<li><p>绑定git</p>
+                <h1 id="数据仓库"><a href="#数据仓库" class="headerlink" title="数据仓库"></a>数据仓库</h1><h2 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h2><ul>
+<li>什么是数据仓库<ul>
+<li>存放数据的对象：特点：</li>
+<li>面像主题：不同场景有不同的主题域</li>
+<li>集成的：多个源头，做归一化处理</li>
+<li>随时间变化的：时间内有效的局限性</li>
+<li>非易失的：可以稳定保存</li>
+</ul>
 </li>
-<li><p>绑定本地密匙到git</p>
+<li>主题<ul>
+<li>可以通过某个关键字关联起来的一系列表</li>
+</ul>
 </li>
-<li><p>初始化一个仓库，Settings-&gt;Pages-&gt;Source：branch设置为master，用来发布页面</p>
+<li>粒度<ul>
+<li>最小粒度原则，可以原子的反应某个或者某组行为的概念</li>
+<li>上卷：粒度变大</li>
+<li>下钻：粒度变小</li>
+</ul>
 </li>
-<li><p>main分支用来存放文件用作后续编辑</p>
+<li>维度<ul>
+<li>研究行为的角度</li>
+<li>好的模型在于已经有的维度满足对模型的需求</li>
+</ul>
+</li>
+</ul>
+<h2 id="设计数据仓库"><a href="#设计数据仓库" class="headerlink" title="设计数据仓库"></a>设计数据仓库</h2><h2 id="选型"><a href="#选型" class="headerlink" title="选型"></a>选型</h2><ul>
+<li>硬件<ul>
+<li>ssd，机械，云</li>
+</ul>
+</li>
+<li>软件<ul>
+<li>olap引擎，存储引擎，调度，管理</li>
+</ul>
+</li>
+</ul>
+<h2 id="数据流程"><a href="#数据流程" class="headerlink" title="数据流程"></a>数据流程</h2><ul>
+<li>集成<ul>
+<li>兼容历史</li>
+<li>不同数据源的口径统一</li>
+<li>主题域划分</li>
+<li>时间语义设计</li>
+</ul>
+</li>
+<li>模型设计<ul>
+<li>概念模型<ul>
+<li>数据界限划分，主题划分</li>
+<li>确定实体，关系，主题域</li>
+</ul>
+</li>
+<li>逻辑模型<ul>
+<li>关系梳理，带入表相关内容</li>
+<li>梳理主题域间的关系</li>
+</ul>
+</li>
+<li>物理模型<ul>
+<li>粒度，分区，冗余的设计和取舍</li>
+<li>落地规划，满足可靠，效率的综合要求</li>
+<li>规范化&amp;反规范化<ul>
+<li>k-v的格式存储-具体需求</li>
+<li>宽表的格式-冗余，性能问题</li>
+<li>索引构建-MPP类型引擎考虑分区问题</li>
+<li>使用频率划分-资源分配问题，热数据，冷数据</li>
+</ul>
 </li>
 </ul>
 </li>
-<li><p>安装node.js</p>
-<ul>
-<li>官网下载符合操作系统的新版本</li>
 </ul>
 </li>
-<li><p>安装hexo</p>
-<pre class="language-shell" data-language="shell"><code class="language-shell"><span class="token function">npm</span> <span class="token function">install</span> -g hexo//安装
-hexo init//初始化项目</code></pre></li>
-<li><p>配置主题</p>
-<ul>
-<li>git搜索，下载解压到<strong>\themes</strong>中</li>
-<li><strong>_config.yml</strong>中themes主题名字修改为解压后的名字</li>
+</ul>
+<h2 id="元数据"><a href="#元数据" class="headerlink" title="元数据"></a>元数据</h2><ul>
+<li>概念<ul>
+<li>不包含数据信息，用来描述数据的数据</li>
+<li>数据结构信息</li>
+<li>etl操作信息</li>
+<li>数仓的信息</li>
+<li>操作，抽取记录</li>
+<li>模型&amp;仓库间的关系</li>
 </ul>
 </li>
-<li><p>发布博客</p>
-<pre class="language-shell" data-language="shell"><code class="language-shell">hexo clean
-hexo g
-hexo s//本地部署预览
-hexo d//发布异常，删除目录下的.开头文件夹</code></pre></li>
-<li><p>上传文件到git，方便后续的编辑</p>
-<pre class="language-none"><code class="language-none">git add .
-git commit -m &quot;修改备注&quot;
-git push</code></pre></li>
+<li>操作方式<ul>
+<li>保证重要操作有记录（日志&amp;文档）</li>
+<li>便于查阅，检索，管理</li>
+</ul>
+</li>
+</ul>
+<h2 id="快照概念"><a href="#快照概念" class="headerlink" title="快照概念"></a>快照概念</h2><ul>
+<li>快照包含<ul>
+<li>一系列的描述</li>
+<li>具体的有用的数据</li>
+</ul>
+</li>
+</ul>
+<h1 id="优化"><a href="#优化" class="headerlink" title="优化"></a>优化</h1><h2 id="分层"><a href="#分层" class="headerlink" title="分层"></a>分层</h2><ul>
+<li>ods<ul>
+<li>尽可能包保持和原来数据一样</li>
+</ul>
+</li>
+<li>dw层<ul>
+<li>轻度的数据汇总，通过一些方法进行汇总<ul>
+<li>可累计的值，pv</li>
+<li>不可累计的值，uv</li>
+<li>由具体的需求设计出来具体的时间段划分</li>
+</ul>
+</li>
+<li>dwd<ul>
+<li>etl后的原始数据层，有统一的口径，理论上最小粒度的数据</li>
+</ul>
+</li>
+<li>dws<ul>
+<li>按照具体的需求，天，月，任意时间段汇总</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>ads<ul>
+<li>面向用户端</li>
+<li>固化的展示或者通过交互的方式进行查询</li>
+</ul>
+</li>
+</ul>
+<h2 id="数据质量控制"><a href="#数据质量控制" class="headerlink" title="数据质量控制"></a>数据质量控制</h2><ul>
+<li>事前探查<ul>
+<li>格式问题，口径问题，是否由系统的bug产生的脏数据</li>
+</ul>
+</li>
+<li>事中监控<ul>
+<li>资源调度，任务链的执行情况</li>
+</ul>
+</li>
+<li>事后核对</li>
 </ul>
 
                 
@@ -545,7 +644,7 @@ git push</code></pre></li>
                     </i>
                 </span>
                 <span class="reprint-info">
-                    <a href="/about" rel="external nofollow noreferrer">John Doe</a>
+                    <a href="/about" rel="external nofollow noreferrer">nove</a>
                 </span>
             </div>
             <div class="reprint__type">
@@ -555,7 +654,7 @@ git push</code></pre></li>
                     </i>
                 </span>
                 <span class="reprint-info">
-                    <a href="http://example.com/2021/12/30/hexo%E6%90%AD%E5%BB%BA/">http://example.com/2021/12/30/hexo%E6%90%AD%E5%BB%BA/</a>
+                    <a href="http://example.com/2022/01/01/%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/">http://example.com/2022/01/01/%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/</a>
                 </span>
             </div>
             <div class="reprint__notice">
@@ -568,7 +667,7 @@ git push</code></pre></li>
                     All articles in this blog are used except for special statements
                     <a href="https://creativecommons.org/licenses/by/4.0/deed.zh" rel="external nofollow noreferrer" target="_blank">CC BY 4.0</a>
                     reprint policy. If reproduced, please indicate source
-                    <a href="/about" target="_blank">John Doe</a>
+                    <a href="/about" target="_blank">nove</a>
                     !
                 </span>
             </div>
@@ -593,8 +692,12 @@ git push</code></pre></li>
                     
                         <div class="article-tag">
                             
-                                <a href="/tags/%E5%8D%9A%E5%AE%A2/">
-                                    <span class="chip bg-color">博客</span>
+                                <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/">
+                                    <span class="chip bg-color">数据仓库</span>
+                                </a>
+                            
+                                <a href="/tags/%E7%BB%B4%E5%BA%A6%E5%BB%BA%E6%A8%A1/">
+                                    <span class="chip bg-color">维度建模</span>
                                 </a>
                             
                         </div>
@@ -772,13 +875,13 @@ git push</code></pre></li>
             <div class="article-badge left-badge text-color">
                 <i class="fas fa-chevron-left"></i>&nbsp;Previous</div>
             <div class="card">
-                <a href="/2022/01/01/%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/">
+                <a href="/2022/01/01/hello-world/">
                     <div class="card-image">
                         
                         
-                        <img src="/medias/featureimages/13.jpg" class="responsive-img" alt="flink的CDC技术">
+                        <img src="/medias/featureimages/12.jpg" class="responsive-img" alt="Hello World">
                         
-                        <span class="card-title">flink的CDC技术</span>
+                        <span class="card-title">Hello World</span>
                     </div>
                 </a>
                 <div class="card-content article-content">
@@ -793,27 +896,11 @@ git push</code></pre></li>
                         </span>
                         <span class="publish-author">
                             
-                            <i class="fas fa-bookmark fa-fw icon-category"></i>
-                            
-                            <a href="/categories/%E5%A4%A7%E6%95%B0%E6%8D%AE/" class="post-category">
-                                    大数据
-                                </a>
-                            
+                            <i class="fas fa-user fa-fw"></i>
+                            John Doe
                             
                         </span>
                     </div>
-                </div>
-                
-                <div class="card-action article-tags">
-                    
-                    <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93/">
-                        <span class="chip bg-color">数据仓库</span>
-                    </a>
-                    
-                    <a href="/tags/%E7%BB%B4%E5%BA%A6%E5%BB%BA%E6%A8%A1/">
-                        <span class="chip bg-color">维度建模</span>
-                    </a>
-                    
                 </div>
                 
             </div>
@@ -825,13 +912,13 @@ git push</code></pre></li>
                 Next&nbsp;<i class="fas fa-chevron-right"></i>
             </div>
             <div class="card">
-                <a href="/2020/12/10/flink%E7%9A%84CDC%E6%8A%80%E6%9C%AF/">
+                <a href="/2021/12/30/hexo%E6%90%AD%E5%BB%BA/">
                     <div class="card-image">
                         
                         
-                        <img src="/medias/featureimages/13.jpg" class="responsive-img" alt="flink的CDC技术">
+                        <img src="/medias/featureimages/23.jpg" class="responsive-img" alt="hexo博客编辑">
                         
-                        <span class="card-title">flink的CDC技术</span>
+                        <span class="card-title">hexo博客编辑</span>
                     </div>
                 </a>
                 <div class="card-content article-content">
@@ -842,14 +929,14 @@ git push</code></pre></li>
                     </div>
                     <div class="publish-info">
                             <span class="publish-date">
-                                <i class="far fa-clock fa-fw icon-date"></i>2020-12-10
+                                <i class="far fa-clock fa-fw icon-date"></i>2021-12-30
                             </span>
                         <span class="publish-author">
                             
                             <i class="fas fa-bookmark fa-fw icon-category"></i>
                             
-                            <a href="/categories/%E5%A4%A7%E6%95%B0%E6%8D%AE/" class="post-category">
-                                    大数据
+                            <a href="/categories/%E5%85%B4%E8%B6%A3/" class="post-category">
+                                    兴趣
                                 </a>
                             
                             
@@ -859,12 +946,8 @@ git push</code></pre></li>
                 
                 <div class="card-action article-tags">
                     
-                    <a href="/tags/flink/">
-                        <span class="chip bg-color">flink</span>
-                    </a>
-                    
-                    <a href="/tags/cdc/">
-                        <span class="chip bg-color">cdc</span>
+                    <a href="/tags/%E5%8D%9A%E5%AE%A2/">
+                        <span class="chip bg-color">博客</span>
                     </a>
                     
                 </div>
